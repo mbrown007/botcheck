@@ -1,6 +1,4 @@
 # BotCheck
-
-[![Build Status](https://github.com/brownster/botcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/brownster/botcheck/actions/workflows/ci.yml)
 [![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/brownster/botcheck/actions/workflows/ci.yml)
 
 
