@@ -12,7 +12,13 @@ run make dev or make build, make up
 
 <img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/92197506-c562-4f44-929f-bc0b873c1843" />
 
+
+
+
 <img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/920e636f-cf8c-4cf3-8916-c1d753b40810" />
+
+
+
 
 <img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/39856b26-6411-4dad-a34d-5796fb2e820a" />
 
