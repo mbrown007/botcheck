@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Production Ready](https://img.shields.io/badge/status-GA--ready-blue)](DEPLOYMENT_PLAN.md)
 
-**Enterprise-grade testing platform for LLM-powered voicebots.**
+**testing platform for LLM-powered voicebots.**
 
 BotCheck is a weekend project to imagine how the next pulse solution would work with scheduled outbound SIP calls to AI Bot LLM as judge scoring rubric etc
 Ended up settling on Yaml format for the outboune scneario calls also added scenario builder using react flow
