@@ -2,8 +2,7 @@
 
 [![Build Status](https://github.com/brownster/botcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/brownster/botcheck/actions/workflows/ci.yml)
 [![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/brownster/botcheck/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Production Ready](https://img.shields.io/badge/status-GA--ready-blue)](DEPLOYMENT_PLAN.md)
+
 
 **testing platform for LLM-powered voicebots.**
 
@@ -125,7 +124,3 @@ Test path note:
 - `infra`: Infrastructure as code, monitoring config, and dashboards.
 
 ---
-
-## ⚖️ License
-
-Distributed under the MIT License. See `LICENSE` for more information.
