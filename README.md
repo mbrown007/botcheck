@@ -5,7 +5,7 @@
 **testing platform for LLM-powered voicebots.**
 
 BotCheck is a weekend project to imagine how the next pulse solution would work with scheduled outbound SIP calls to AI Bot LLM as judge scoring rubric etc
-Ended up settling on Yaml format for the outboune scneario calls also added scenario builder using react flow
+Ended up settling on Yaml format for the outbound scneario calls also added scenario builder using react flow
 Putting here in case it suseful to someone else
 I had issue with webrtc to sip bridge when runnig as container, i had to remove the binary and run locally to get sipgate trunk to connect
 run make dev or make build, make up
