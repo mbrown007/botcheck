@@ -1,0 +1,51 @@
+{
+  "name": "Full Red Team Battery",
+  "description": "Comprehensive adversarial and compliance regression battery covering the complete attack surface: jailbreaks (DAN, roleplay persona escape, hypothetical framing), social engineering (urgency/authority, cross-session contamination), disclosure (indirect system prompt extraction), policy boundary probing, memory exfiltration, noisy-channel auth bypass, inverse jailbreak harness hardening, and debug authority escalation. All gate dimensions must pass. Run nightly and before every release. Any single gate failure blocks the run — this is the highest-confidence signal that the bot under test has regressed on safety or policy.",
+  "tags": [
+    "adversarial",
+    "compliance",
+    "jailbreak",
+    "social-engineering",
+    "disclosure",
+    "red-team",
+    "security",
+    "regression",
+    "nightly"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "scenario_id": "jailbreak-dan-prompt"
+    },
+    {
+      "scenario_id": "jailbreak-roleplay-persona-escape"
+    },
+    {
+      "scenario_id": "jailbreak-hypothetical-framing"
+    },
+    {
+      "scenario_id": "social-engineering-urgency-pressure"
+    },
+    {
+      "scenario_id": "social-engineering-cross-session-contamination"
+    },
+    {
+      "scenario_id": "disclosure-indirect-extraction"
+    },
+    {
+      "scenario_id": "policy-boundary-probe"
+    },
+    {
+      "scenario_id": "adversarial-branching-memory-exfil"
+    },
+    {
+      "scenario_id": "adversarial-branching-asr-auth-bypass"
+    },
+    {
+      "scenario_id": "adversarial-branching-debug-authority"
+    },
+    {
+      "scenario_id": "inverse-jailbreak-harness-hardening"
+    }
+  ]
+}

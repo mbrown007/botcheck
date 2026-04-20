@@ -1,0 +1,17 @@
+{
+  "name": "Direct HTTP Basic Chat",
+  "protocol": "http",
+  "endpoint": "https://bot.internal/chat",
+  "headers": {},
+  "direct_http_config": {
+    "method": "POST",
+    "request_content_type": "json",
+    "request_text_field": "message",
+    "request_history_field": "history",
+    "request_session_id_field": "session_id",
+    "response_text_field": "response",
+    "timeout_s": 20,
+    "max_retries": 1
+  },
+  "is_active": true
+}

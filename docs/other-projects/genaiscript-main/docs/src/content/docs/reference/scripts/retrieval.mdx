@@ -1,0 +1,62 @@
+---
+title: Retrieval
+sidebar:
+  order: 10
+description: Learn how to use GenAIScript's retrieval utilities for content
+  search and prompt augmentation with RAG techniques.
+keywords: RAG, content retrieval, search augmentation, indexing, web search,
+  Azure AI Search
+hero:
+  image:
+    alt: "A minimalist 8-bit illustration features three evenly spaced icons: the
+      first is a grid made of colored squares representing vector search; the
+      second is a magnifying glass above horizontal rectangles symbolizing fuzzy
+      search; the third is a globe next to a browser window indicating web
+      search. Only five flat colors are used, set against a plain white
+      background with clear separation and symmetry, all in a clean 128x128
+      layout."
+    file: ./retrieval.png
+
+---
+
+import { YouTube } from "astro-embed"
+
+GenAIScript provides various utilities to retrieve content and augment the prompt.
+This technique is typically referred to as **RAG** (Retrieval-Augmentation-Generation) in the literature.
+
+## Vector Search
+
+GenAIScript provides various vector database to support embeddings (vector) search.
+
+```js
+// index creation
+const index = await retrieval.index("animals")
+// indexing
+await index.insertOrUpdate(env.files)
+// search
+const res = await index.search("cat dog")
+def("RAG", res)
+```
+
+- Read more about [vector search](/genaiscript/reference/scripts/vector-search) and how to use it.
+
+## Fuzzy Search
+
+The `retrieve.fuzzSearch` performs a "traditional" fuzzy search to find the most similar documents to the prompt.
+
+```js
+const files = await retrieval.fuzzSearch("cat dog", env.files)
+```
+
+## Web Search
+
+The `retrieval.webSearch` performs a web search using a search engine API. You will need to provide API keys for the search engine you want to use.
+
+```js
+const { webPages } = await retrieval.webSearch("cat dog")
+def("RAG", webPages)
+```
+
+### Bing
+
+To enable Bing search, configure the `BING_SEARCH_API_KEY` secret in your `.env` file. Learn more about [configuring the Bing Search API](https://www.microsoft.com/en-us/bing/apis/bing-web-search-api).

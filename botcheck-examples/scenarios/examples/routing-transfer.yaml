@@ -1,0 +1,44 @@
+version: '1.0'
+id: routing-transfer-billing
+name: "Routing \u2014 Transfer to Billing Department"
+type: golden_path
+description: 'Verifies the bot correctly identifies a billing dispute intent and transfers the call to the billing queue within the expected turn count.
+
+  '
+bot:
+  endpoint: sip:${BOT_SIP_USER}@${SIP_PROVIDER}
+  protocol: sip
+config:
+  turn_timeout_s: 12
+  max_duration_s: 90
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: I've been incorrectly charged on my last bill and I want to dispute it.
+  listen: true
+  expect:
+    intent_recognized: true
+- id: t2
+  kind: harness_prompt
+  content:
+    text: Yes, I'd like to speak to someone about this.
+  listen: true
+  expect:
+    transferred_to: billing-disputes
+scoring:
+  rubric:
+  - dimension: routing
+    weight: 0.7
+    threshold: 0.95
+    gate: true
+  - dimension: reliability
+    weight: 0.3
+    threshold: 0.9
+    gate: true
+  overall_gate: true
+tags:
+- routing
+- transfer
+- billing
+- smoke-test

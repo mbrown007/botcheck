@@ -1,0 +1,57 @@
+version: '1.0'
+id: monitoring-assistant-dashboard-handoff
+name: Monitoring Assistant Dashboard Handoff
+namespace: monitoring-assistant/http-targeted-tasks
+description: Smoke test for dashboard summary and on-call handoff guidance over the monitoring assistant HTTP transport.
+type: golden_path
+http_request_context:
+  dashboard_context:
+    uid: monitoring-overview
+    name: Monitoring Assistant Overview
+    folder: Operations
+    tags:
+    - operations
+    - handoff
+    time_range:
+      from: now-6h
+      to: now
+    variables:
+      service: checkout
+      cluster: prod-eu-1
+    explore:
+      datasource: prom-main
+      queries:
+      - sum(rate(http_requests_total{service="checkout"}[5m]))
+      - histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service="checkout"}[5m])))
+  selected_context:
+  - type: dashboard
+    id: monitoring-overview
+    display_name: Monitoring Assistant Overview
+    metadata:
+      folder: Operations
+  - type: metric
+    id: http_request_duration_seconds_bucket
+    display_name: Checkout P95 Latency
+    metadata:
+      service: checkout
+      aggregation: p95
+bot:
+  protocol: mock
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Summarize what this dashboard shows in five bullets for an on-call handoff. Keep it operational and concise.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't access Grafana
+    - I cannot access Grafana
+    - I don't have access to the dashboard
+    - I can't help with that
+tags:
+- monitoring-assistant
+- http
+- smoke
+- dashboard-summary
+- grafana

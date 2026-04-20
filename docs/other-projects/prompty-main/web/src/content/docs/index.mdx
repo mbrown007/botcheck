@@ -1,0 +1,124 @@
+---
+title: prompty.ai
+head:
+  - tag: title
+    content: prompty.ai
+description: |
+  Prompty is a markdown file format for LLM prompts — define model config,
+  inputs, tools, and templates in YAML frontmatter, then execute across
+  Python and TypeScript.
+template: splash
+editUrl: false
+lastUpdated: false
+header: false
+next: false
+hero:
+  title: Agency with observability
+  tagline: |
+    Prompty is a markdown file format for LLM prompts — define model config,
+    inputs, tools, and templates in YAML frontmatter, then execute across
+    Python and TypeScript.
+  image:
+    html: <img src="/prompty_p.svg" alt="Prompty" width="320" height="374" />
+  actions:
+    - text: Get started
+      icon: right-arrow
+      link: /welcome/
+    - text: View on GitHub
+      icon: external
+      variant: minimal
+      link: https://github.com/microsoft/prompty
+sidebar:
+  hidden: true
+---
+import InfoGrid from '~/components/info-grid.astro';
+import Info from '~/components/info.astro';
+import NumberGrid from '~/components/number-grid.astro';
+import Number from '~/components/number.astro';
+import AboutPrompty from '~/components/about-prompty.astro';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { ContributorList } from "starlight-contributor-list";
+
+<InfoGrid>
+  <Info reversed={false} title="One file, complete prompt" image="/images/prompty-file.png">
+    A `.prompty` file pairs **YAML frontmatter** with a **markdown prompt body**
+    in a single, portable asset. Define your model, inputs, tools, and template —
+    then execute it from Python, TypeScript, or VS Code with one command.
+
+      - Model configuration and connection details
+      - Input schema with types and defaults
+      - Tool definitions (function, MCP, OpenAPI)
+      - Template rendering with Jinja2 or Mustache
+  </Info>
+  <Info reversed={true} title="Author in VS Code" image="/images/vscode-editor.png">
+    The **Prompty VS Code extension** is your prompt engineering workbench.
+    Write prompts with full language support, run them with F5, and inspect
+    every detail in the built-in trace viewer.
+
+      - Syntax highlighting and autocomplete
+      - Connection management for OpenAI, Anthropic, and Microsoft Foundry
+      - Live preview and interactive chat mode
+      - One-click execution with inline results
+  </Info>
+  <Info reversed={false} title="Trace everything" image="/images/trace-viewer.png">
+    Every execution produces a **detailed trace** — messages sent, tokens used,
+    latency, and the raw API response. Debug prompt issues in seconds, not hours.
+
+      - Built-in console, JSON file, and OpenTelemetry backends
+      - VS Code trace viewer with conversation, timing, and raw views
+      - Decorate your own functions with `@trace` for end-to-end visibility
+      - Zero-overhead when no tracer is registered
+  </Info>
+  <Info reversed={true} title="The pipeline" image="/images/prompty-pipeline.svg">
+    Prompty processes every prompt through a **four-stage pipeline** — each
+    stage is swappable and independently traceable.
+
+      - **Render** — expand template variables with Jinja2 or Mustache
+      - **Parse** — split role markers into a message list
+      - **Execute** — call the LLM via any registered provider
+      - **Process** — extract content, parse structured output, stream chunks
+  </Info>
+</InfoGrid>
+
+<NumberGrid>
+  <Number number={1} title="Portable by design">
+    Same `.prompty` file works across Python, TypeScript, and VS Code — no rewriting.
+  </Number>
+  <Number number={2} title="Any provider">
+    OpenAI, Microsoft Foundry, Anthropic — or build your own executor in minutes.
+  </Number>
+  <Number number={3} title="Observable by default">
+    Built-in tracing with pluggable backends — console, files, or OpenTelemetry.
+  </Number>
+</NumberGrid>
+
+<InfoGrid>
+  <Info reversed={false} title="Agent mode & tools" image="/images/agent-tools.png">
+    Define tools in your frontmatter and let the runtime handle the **tool-calling loop**
+    automatically. Supports streaming, structured output, and the OpenAI Responses API.
+
+      - Function tools with local callables
+      - MCP server integration
+      - OpenAPI-based tools
+      - Automatic retry and error recovery
+  </Info>
+  <Info reversed={true} title="Open source, open standard" image="/images/open-source-ecosystem.svg">
+    Prompty is built on the premise that even with increasing complexity in AI,
+    a fundamental unit remains prompts. The format is open, extensible, and
+    designed to grow with the ecosystem.
+
+      - TypeSpec-defined schema with generated model code
+      - Entry-point-based plugin system for custom providers
+      - MIT licensed — contributions welcome
+  </Info>
+</InfoGrid>
+
+<CardGrid>
+  <LinkCard title="Jump In!" href="/welcome/" />
+  <LinkCard title="Core Concepts" href="/core-concepts/" />
+</CardGrid>
+
+<AboutPrompty title="Sponsored by:">
+  Thanks to all of our amazing contributors:
+  <ContributorList githubRepo="microsoft/prompty"/>
+</AboutPrompty>

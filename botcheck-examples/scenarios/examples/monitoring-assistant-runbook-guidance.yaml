@@ -1,0 +1,43 @@
+version: '1.0'
+id: monitoring-assistant-runbook-guidance
+name: Monitoring Assistant Runbook Guidance
+namespace: monitoring-assistant/http-targeted-tasks
+description: Smoke test for runbook and SOP guidance over the monitoring assistant HTTP transport.
+type: golden_path
+http_request_context:
+  dashboard_context:
+    uid: post-deploy-latency
+    name: Post Deploy Latency Regression
+    folder: Runbooks
+    tags:
+    - runbook
+    - latency
+    time_range:
+      from: now-2h
+      to: now
+    variables:
+      service: checkout
+      deployment: 2026.03.18-1
+    explore:
+      datasource: prom-main
+      queries:
+      - histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service="checkout"}[5m])))
+bot:
+  protocol: mock
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Create a concise SOP for triaging latency regressions after deployment. Include diagnostics, mitigation, and recovery validation.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't access the runbook
+    - I don't know the SOP
+    - I can't help with that
+tags:
+- monitoring-assistant
+- http
+- smoke
+- docs-runbook
+- latency

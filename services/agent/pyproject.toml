@@ -1,0 +1,32 @@
+[project]
+name = "botcheck-agent"
+version = "0.1.0"
+description = "BotCheck Harness Agent — LiveKit agent that executes test scenarios"
+requires-python = ">=3.11"
+dependencies = [
+    "livekit-agents[openai,deepgram,azure,silero]>=0.12",
+    "pydantic-settings>=2.4",
+    "httpx>=0.27",
+    "tenacity>=9.0",
+    "aioboto3>=13.0",
+    "prometheus-client>=0.20",
+    "opentelemetry-sdk>=1.20",
+    "opentelemetry-exporter-otlp-proto-http>=1.20",
+    "opentelemetry-instrumentation-httpx>=0.40b0",
+    "structlog>=24.1",
+    "botcheck-http-client",
+    "botcheck-observability",
+    "botcheck-scenarios",
+]
+
+[tool.uv.sources]
+botcheck-http-client = { workspace = true }
+botcheck-observability = { workspace = true }
+botcheck-scenarios = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

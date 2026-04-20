@@ -1,0 +1,20 @@
+{
+  "name": "Direct HTTP Authenticated Bot",
+  "protocol": "http",
+  "endpoint": "https://staging-bot.internal/api/chat",
+  "headers": {
+    "Authorization": "Bearer replace-me",
+    "X-Bot-Tenant": "staging"
+  },
+  "direct_http_config": {
+    "method": "POST",
+    "request_content_type": "json",
+    "request_text_field": "input",
+    "request_history_field": "messages",
+    "request_session_id_field": "conversation_id",
+    "response_text_field": "reply.text",
+    "timeout_s": 30,
+    "max_retries": 1
+  },
+  "is_active": true
+}

@@ -1,0 +1,21 @@
+[project]
+name = "botcheck-observability"
+version = "0.1.0"
+description = "BotCheck shared observability contracts and helpers"
+requires-python = ">=3.11"
+dependencies = [
+    "opentelemetry-api>=1.20",
+    "prometheus-client>=0.20",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["botcheck_observability"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+]

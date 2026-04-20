@@ -1,0 +1,1190 @@
+{
+  "$defs": {
+    "AdversarialTechnique": {
+      "description": "Classification of the adversarial method used in a turn.",
+      "enum": [
+        "dan_prompt",
+        "system_prompt_extraction",
+        "role_play",
+        "prompt_injection",
+        "goal_hijacking",
+        "policy_boundary",
+        "pii_elicitation",
+        "auth_bypass",
+        "persistence",
+        "impersonation",
+        "academic_framing",
+        "fiction_wrapper",
+        "hypothetical_override",
+        "completion_trap"
+      ],
+      "title": "AdversarialTechnique",
+      "type": "string"
+    },
+    "BotConfig": {
+      "description": "How to reach the voicebot under test.",
+      "properties": {
+        "caller_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caller Id"
+        },
+        "endpoint": {
+          "default": "",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "protocol": {
+          "$ref": "#/$defs/BotProtocol",
+          "default": "sip"
+        },
+        "trunk_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trunk Id"
+        }
+      },
+      "title": "BotConfig",
+      "type": "object"
+    },
+    "BotListenBlock": {
+      "description": "Harness waits for the bot to speak first.",
+      "properties": {
+        "adversarial": {
+          "default": false,
+          "title": "Adversarial",
+          "type": "boolean"
+        },
+        "branching": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BranchConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "config": {
+          "$ref": "#/$defs/TurnConfig"
+        },
+        "expect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TurnExpectation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "bot_listen",
+          "default": "bot_listen",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_visits": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Max Visits",
+          "type": "integer"
+        },
+        "next": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next"
+        },
+        "technique": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AdversarialTechnique"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "BotListenBlock",
+      "type": "object"
+    },
+    "BotProtocol": {
+      "enum": [
+        "sip",
+        "webrtc",
+        "mock"
+      ],
+      "title": "BotProtocol",
+      "type": "string"
+    },
+    "BranchCase": {
+      "description": "Conditional branch selector for a turn.",
+      "properties": {
+        "condition": {
+          "title": "Condition",
+          "type": "string"
+        },
+        "match": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Match"
+        },
+        "next": {
+          "title": "Next",
+          "type": "string"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex"
+        }
+      },
+      "required": [
+        "condition",
+        "next"
+      ],
+      "title": "BranchCase",
+      "type": "object"
+    },
+    "BranchConfig": {
+      "description": "Branching configuration for a turn.",
+      "properties": {
+        "cases": {
+          "items": {
+            "$ref": "#/$defs/BranchCase"
+          },
+          "title": "Cases",
+          "type": "array"
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/BranchMode",
+          "default": "classifier"
+        }
+      },
+      "required": [
+        "cases",
+        "default"
+      ],
+      "title": "BranchConfig",
+      "type": "object"
+    },
+    "BranchMode": {
+      "enum": [
+        "classifier",
+        "keyword",
+        "regex"
+      ],
+      "title": "BranchMode",
+      "type": "string"
+    },
+    "DimensionRubric": {
+      "description": "Scoring configuration for one dimension.",
+      "properties": {
+        "custom_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Prompt"
+        },
+        "dimension": {
+          "$ref": "#/$defs/ScoringDimension"
+        },
+        "gate": {
+          "default": false,
+          "title": "Gate",
+          "type": "boolean"
+        },
+        "threshold": {
+          "description": "Score below this value -> FAIL status for this dimension.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Threshold",
+          "type": "number"
+        },
+        "weight": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension",
+        "weight",
+        "threshold"
+      ],
+      "title": "DimensionRubric",
+      "type": "object"
+    },
+    "HangupBlock": {
+      "description": "Terminal hangup marker.",
+      "properties": {
+        "adversarial": {
+          "default": false,
+          "title": "Adversarial",
+          "type": "boolean"
+        },
+        "branching": {
+          "default": null,
+          "title": "Branching",
+          "type": "null"
+        },
+        "config": {
+          "$ref": "#/$defs/TurnConfig"
+        },
+        "expect": {
+          "default": null,
+          "title": "Expect",
+          "type": "null"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "hangup",
+          "default": "hangup",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_visits": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Max Visits",
+          "type": "integer"
+        },
+        "next": {
+          "default": null,
+          "title": "Next",
+          "type": "null"
+        },
+        "technique": {
+          "default": null,
+          "title": "Technique",
+          "type": "null"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "HangupBlock",
+      "type": "object"
+    },
+    "HarnessPromptBlock": {
+      "description": "Harness plays content and may optionally listen for a response.",
+      "properties": {
+        "adversarial": {
+          "default": false,
+          "title": "Adversarial",
+          "type": "boolean"
+        },
+        "branching": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BranchConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "config": {
+          "$ref": "#/$defs/TurnConfig"
+        },
+        "content": {
+          "$ref": "#/$defs/PromptContent"
+        },
+        "expect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TurnExpectation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "harness_prompt",
+          "default": "harness_prompt",
+          "title": "Kind",
+          "type": "string"
+        },
+        "listen": {
+          "default": true,
+          "title": "Listen",
+          "type": "boolean"
+        },
+        "max_visits": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Max Visits",
+          "type": "integer"
+        },
+        "next": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next"
+        },
+        "technique": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AdversarialTechnique"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "content"
+      ],
+      "title": "HarnessPromptBlock",
+      "type": "object"
+    },
+    "PersonaConfig": {
+      "description": "Harness persona profile used to shape caller tone and style.",
+      "properties": {
+        "mood": {
+          "$ref": "#/$defs/PersonaMood",
+          "default": "neutral"
+        },
+        "response_style": {
+          "$ref": "#/$defs/ResponseStyle",
+          "default": "casual"
+        }
+      },
+      "title": "PersonaConfig",
+      "type": "object"
+    },
+    "PersonaMood": {
+      "enum": [
+        "neutral",
+        "happy",
+        "angry",
+        "frustrated",
+        "impatient"
+      ],
+      "title": "PersonaMood",
+      "type": "string"
+    },
+    "PromptContent": {
+      "description": "Prompt content for a harness block.",
+      "properties": {
+        "audio_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio File"
+        },
+        "dtmf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dtmf"
+        },
+        "silence_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Silence S"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "title": "PromptContent",
+      "type": "object"
+    },
+    "ResponseStyle": {
+      "enum": [
+        "formal",
+        "casual",
+        "curt",
+        "verbose"
+      ],
+      "title": "ResponseStyle",
+      "type": "string"
+    },
+    "ScenarioConfig": {
+      "description": "Runtime configuration for the test harness.",
+      "properties": {
+        "bot_join_timeout_s": {
+          "default": 60.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Bot Join Timeout S",
+          "type": "number"
+        },
+        "initial_drain_s": {
+          "default": 2.0,
+          "minimum": 0.0,
+          "title": "Initial Drain S",
+          "type": "number"
+        },
+        "inter_turn_pause_s": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Inter Turn Pause S",
+          "type": "number"
+        },
+        "language": {
+          "default": "en-US",
+          "title": "Language",
+          "type": "string"
+        },
+        "max_duration_s": {
+          "default": 300.0,
+          "title": "Max Duration S",
+          "type": "number"
+        },
+        "max_total_turns": {
+          "default": 50,
+          "minimum": 1,
+          "title": "Max Total Turns",
+          "type": "integer"
+        },
+        "noise_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Noise Profile"
+        },
+        "pause_threshold_ms": {
+          "default": 2000,
+          "title": "Pause Threshold Ms",
+          "type": "integer"
+        },
+        "record_audio": {
+          "default": true,
+          "title": "Record Audio",
+          "type": "boolean"
+        },
+        "record_transcript": {
+          "default": true,
+          "title": "Record Transcript",
+          "type": "boolean"
+        },
+        "stt_endpointing_ms": {
+          "default": 2000,
+          "minimum": 0,
+          "title": "Stt Endpointing Ms",
+          "type": "integer"
+        },
+        "stt_model": {
+          "default": "nova-2-general",
+          "title": "Stt Model",
+          "type": "string"
+        },
+        "stt_provider": {
+          "default": "deepgram",
+          "title": "Stt Provider",
+          "type": "string"
+        },
+        "timing_gate_interruption_recovery_pct": {
+          "default": 90.0,
+          "title": "Timing Gate Interruption Recovery Pct",
+          "type": "number"
+        },
+        "timing_gate_interruptions_count": {
+          "default": 2,
+          "title": "Timing Gate Interruptions Count",
+          "type": "integer"
+        },
+        "timing_gate_long_pause_count": {
+          "default": 3,
+          "title": "Timing Gate Long Pause Count",
+          "type": "integer"
+        },
+        "timing_gate_p95_response_gap_ms": {
+          "default": 1200,
+          "title": "Timing Gate P95 Response Gap Ms",
+          "type": "integer"
+        },
+        "timing_gate_turn_taking_efficiency_pct": {
+          "default": 95.0,
+          "title": "Timing Gate Turn Taking Efficiency Pct",
+          "type": "number"
+        },
+        "timing_warn_interruption_recovery_pct": {
+          "default": 85.0,
+          "title": "Timing Warn Interruption Recovery Pct",
+          "type": "number"
+        },
+        "timing_warn_interruptions_count": {
+          "default": 0,
+          "title": "Timing Warn Interruptions Count",
+          "type": "integer"
+        },
+        "timing_warn_long_pause_count": {
+          "default": 1,
+          "title": "Timing Warn Long Pause Count",
+          "type": "integer"
+        },
+        "timing_warn_p95_response_gap_ms": {
+          "default": 800,
+          "title": "Timing Warn P95 Response Gap Ms",
+          "type": "integer"
+        },
+        "timing_warn_turn_taking_efficiency_pct": {
+          "default": 90.0,
+          "title": "Timing Warn Turn Taking Efficiency Pct",
+          "type": "number"
+        },
+        "transcript_merge_window_s": {
+          "default": 1.5,
+          "exclusiveMinimum": 0.0,
+          "title": "Transcript Merge Window S",
+          "type": "number"
+        },
+        "transfer_timeout_s": {
+          "default": 35.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Transfer Timeout S",
+          "type": "number"
+        },
+        "tts_voice": {
+          "default": "openai:nova",
+          "title": "Tts Voice",
+          "type": "string"
+        },
+        "turn_timeout_s": {
+          "default": 15.0,
+          "title": "Turn Timeout S",
+          "type": "number"
+        }
+      },
+      "title": "ScenarioConfig",
+      "type": "object"
+    },
+    "ScenarioScoring": {
+      "description": "Scoring overrides for this scenario (merged with type defaults).",
+      "properties": {
+        "overall_gate": {
+          "default": true,
+          "title": "Overall Gate",
+          "type": "boolean"
+        },
+        "rubric": {
+          "items": {
+            "$ref": "#/$defs/DimensionRubric"
+          },
+          "title": "Rubric",
+          "type": "array"
+        }
+      },
+      "title": "ScenarioScoring",
+      "type": "object"
+    },
+    "ScenarioType": {
+      "description": "Broad category of the scenario - drives default scoring rubric.",
+      "enum": [
+        "golden_path",
+        "robustness",
+        "adversarial",
+        "compliance",
+        "reliability"
+      ],
+      "title": "ScenarioType",
+      "type": "string"
+    },
+    "ScoringDimension": {
+      "enum": [
+        "routing",
+        "policy",
+        "jailbreak",
+        "disclosure",
+        "pii_handling",
+        "reliability",
+        "role_integrity"
+      ],
+      "title": "ScoringDimension",
+      "type": "string"
+    },
+    "TimeRouteBlock": {
+      "description": "Route to the next turn based on local time in a configured timezone.",
+      "properties": {
+        "adversarial": {
+          "default": false,
+          "title": "Adversarial",
+          "type": "boolean"
+        },
+        "branching": {
+          "default": null,
+          "title": "Branching",
+          "type": "null"
+        },
+        "config": {
+          "$ref": "#/$defs/TurnConfig"
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "expect": {
+          "default": null,
+          "title": "Expect",
+          "type": "null"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "time_route",
+          "default": "time_route",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_visits": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Max Visits",
+          "type": "integer"
+        },
+        "next": {
+          "default": null,
+          "title": "Next",
+          "type": "null"
+        },
+        "technique": {
+          "default": null,
+          "title": "Technique",
+          "type": "null"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "windows": {
+          "items": {
+            "$ref": "#/$defs/TimeRouteWindow"
+          },
+          "title": "Windows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "timezone",
+        "windows",
+        "default"
+      ],
+      "title": "TimeRouteBlock",
+      "type": "object"
+    },
+    "TimeRouteWindow": {
+      "description": "Time-of-day route arm within a time_route block.",
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "next": {
+          "title": "Next",
+          "type": "string"
+        },
+        "start": {
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "start",
+        "end",
+        "next"
+      ],
+      "title": "TimeRouteWindow",
+      "type": "object"
+    },
+    "TurnConfig": {
+      "description": "Per-turn configuration overrides.",
+      "properties": {
+        "dtmf_inter_digit_ms": {
+          "default": 100,
+          "minimum": 0,
+          "title": "Dtmf Inter Digit Ms",
+          "type": "integer"
+        },
+        "dtmf_tone_duration_ms": {
+          "default": 70,
+          "exclusiveMinimum": 0,
+          "title": "Dtmf Tone Duration Ms",
+          "type": "integer"
+        },
+        "listen_for_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Listen For S"
+        },
+        "min_response_duration_s": {
+          "default": 0.5,
+          "title": "Min Response Duration S",
+          "type": "number"
+        },
+        "post_speak_pause_s": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Post Speak Pause S",
+          "type": "number"
+        },
+        "pre_listen_wait_s": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Pre Listen Wait S",
+          "type": "number"
+        },
+        "pre_speak_pause_s": {
+          "default": 0.0,
+          "minimum": 0.0,
+          "title": "Pre Speak Pause S",
+          "type": "number"
+        },
+        "retry_on_silence": {
+          "default": 0,
+          "title": "Retry On Silence",
+          "type": "integer"
+        },
+        "stt_endpointing_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stt Endpointing Ms"
+        },
+        "timeout_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout S"
+        },
+        "transcript_merge_window_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transcript Merge Window S"
+        }
+      },
+      "title": "TurnConfig",
+      "type": "object"
+    },
+    "TurnExpectation": {
+      "description": "Assertions about what the bot should (or should not) do on this turn.\nUsed by both the deterministic checker and as rubric hints for the LLM judge.",
+      "properties": {
+        "call_ended_by_bot": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Call Ended By Bot"
+        },
+        "escalated": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Escalated"
+        },
+        "intent_recognized": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intent Recognized"
+        },
+        "jailbreak_resisted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jailbreak Resisted"
+        },
+        "no_forbidden_phrase": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "No Forbidden Phrase"
+        },
+        "no_pii_request": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "No Pii Request"
+        },
+        "no_system_prompt_disclosure": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "No System Prompt Disclosure"
+        },
+        "transferred_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transferred To"
+        }
+      },
+      "title": "TurnExpectation",
+      "type": "object"
+    },
+    "WaitBlock": {
+      "description": "Clock-only pause that does not emit audio or open a listen window.",
+      "properties": {
+        "adversarial": {
+          "default": false,
+          "title": "Adversarial",
+          "type": "boolean"
+        },
+        "branching": {
+          "default": null,
+          "title": "Branching",
+          "type": "null"
+        },
+        "config": {
+          "$ref": "#/$defs/TurnConfig"
+        },
+        "expect": {
+          "default": null,
+          "title": "Expect",
+          "type": "null"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "wait",
+          "default": "wait",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_visits": {
+          "default": 1,
+          "minimum": 0,
+          "title": "Max Visits",
+          "type": "integer"
+        },
+        "next": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next"
+        },
+        "technique": {
+          "default": null,
+          "title": "Technique",
+          "type": "null"
+        },
+        "wait_s": {
+          "exclusiveMinimum": 0.0,
+          "title": "Wait S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "wait_s"
+      ],
+      "title": "WaitBlock",
+      "type": "object"
+    }
+  },
+  "description": "Root model for a BotCheck scenario YAML file.\n\nExample minimal scenario:\n\n    version: \"1.0\"\n    id: golden-path-billing\n    name: \"Golden Path - Billing Query\"\n    type: golden_path\n    bot:\n      endpoint: \"sip:${BOT_SIP_USER}@${SIP_PROVIDER}\"\n      protocol: sip\n    turns:\n      - id: t1\n        text: \"Hi, I need to check my account balance.\"\n        wait_for_response: true\n        expect:\n          intent_recognized: true",
+  "properties": {
+    "bot": {
+      "$ref": "#/$defs/BotConfig"
+    },
+    "config": {
+      "$ref": "#/$defs/ScenarioConfig"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "http_request_context": {
+      "additionalProperties": true,
+      "title": "Http Request Context",
+      "type": "object"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "namespace": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Namespace"
+    },
+    "persona": {
+      "$ref": "#/$defs/PersonaConfig"
+    },
+    "scoring": {
+      "$ref": "#/$defs/ScenarioScoring"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "turns": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "bot_listen": "#/$defs/BotListenBlock",
+            "hangup": "#/$defs/HangupBlock",
+            "harness_prompt": "#/$defs/HarnessPromptBlock",
+            "time_route": "#/$defs/TimeRouteBlock",
+            "wait": "#/$defs/WaitBlock"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/HarnessPromptBlock"
+          },
+          {
+            "$ref": "#/$defs/BotListenBlock"
+          },
+          {
+            "$ref": "#/$defs/HangupBlock"
+          },
+          {
+            "$ref": "#/$defs/WaitBlock"
+          },
+          {
+            "$ref": "#/$defs/TimeRouteBlock"
+          }
+        ]
+      },
+      "title": "Turns",
+      "type": "array"
+    },
+    "type": {
+      "$ref": "#/$defs/ScenarioType"
+    },
+    "version": {
+      "default": "1.0",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "type",
+    "bot",
+    "turns"
+  ],
+  "title": "ScenarioDefinition",
+  "type": "object"
+}

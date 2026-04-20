@@ -1,0 +1,7 @@
+users:
+  - email: admin@botcheck.local
+    tenant_id: default
+    role: system_admin
+    password_hash: "$argon2id$v=19$m=65536,t=2,p=2$9F6rFeJ8D2FMaW3Nudf63w$ab1VyiIiyl0Rx+V57JRyBNI0QvRBNqdHCdlKFX1eLts"
+    is_active: true
+    totp_enabled: false

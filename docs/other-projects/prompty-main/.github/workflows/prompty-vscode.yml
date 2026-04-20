@@ -1,0 +1,55 @@
+name: prompty VSCode Extension build
+
+on:
+  push:
+    tags:
+      - 'vscode/*'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+
+      - name: Extract version from tag
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/vscode/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/vscode/}"
+          else
+            VERSION=$(node -p "require('./vscode/prompty/package.json').version")
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Using version: $VERSION"
+
+      - name: Install dependencies
+        working-directory: ./vscode/prompty
+        run: npm install
+
+      - name: Compile
+        working-directory: ./vscode/prompty
+        run: npm run compile
+
+      - name: Generate Grammar
+        working-directory: ./vscode/prompty
+        run: npm run generate-grammar
+
+      - name: Build
+        working-directory: ./vscode/prompty
+        run: npm run build
+
+      - name: Build VSIX
+        working-directory: ./vscode/prompty
+        run: npm run package-pre -- $VERSION
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: vscode-vsix
+          path: ./vscode/prompty/*.vsix

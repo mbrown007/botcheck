@@ -1,0 +1,99 @@
+// Grafana Alloy config for BotCheck.
+// Scrapes app + LiveKit metrics and forwards to Grafana Cloud Prometheus.
+
+prometheus.scrape "botcheck_api" {
+  targets = [{
+    "__address__" = "api:8000",
+    "service"     = "api",
+  }]
+  metrics_path = "/metrics"
+  authorization {
+    type             = "Bearer"
+    credentials_file = "/etc/alloy/metrics-scrape-token"
+  }
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+// No bearer auth for judge/agent: their /metrics ports (9101, 9102) are bound
+// to 127.0.0.1 only in docker-compose.yml and are not reachable from the internet.
+prometheus.scrape "botcheck_judge" {
+  targets = [{
+    "__address__" = "judge:9101",
+    "service"     = "judge",
+  }]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.scrape "botcheck_agent" {
+  targets = [{
+    "__address__" = "agent:9102",
+    "service"     = "agent",
+  }]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.scrape "botcheck_host" {
+  targets = [{
+    "__address__" = "node-exporter:9100",
+    "service"     = "host",
+  }]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.scrape "livekit_server" {
+  targets = [{
+    "__address__" = "livekit:6789",
+    "service"     = "livekit",
+  }]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_USER")
+      password = sys.env("GRAFANA_CLOUD_TOKEN")
+    }
+  }
+}
+
+// OTLP trace ingest and forwarding to local Tempo (monitoring-assistant stack).
+// Any instrumented service (LiveKit, SIP, API, judge, agent) can send OTLP
+// traces to alloy:4317 (gRPC) or alloy:4318 (HTTP).
+otelcol.receiver.otlp "botcheck" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  output {
+    traces = [otelcol.exporter.otlp.local_tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "local_tempo" {
+  client {
+    // monitoring-assistant Tempo exposed on the host at port 14317.
+    endpoint = "host.docker.internal:14317"
+    tls {
+      insecure = true
+    }
+  }
+}

@@ -1,0 +1,60 @@
+version: '1.0'
+id: e2e-sip-mobile-smoke
+name: "E2E SIP Smoke Test \u2014 Mobile"
+type: reliability
+description: "End-to-end pipeline smoke test over a real PSTN/SIP call. Dials a mobile number via sipgate.co.uk and verifies the full audio path: outbound SIP dial \u2192 LiveKit room \u2192 TTS playback \u2192 STT transcription \u2192 judge.\nAnswer the call, respond naturally, and hang up at the end. Scoring only checks audio-pipeline reliability \u2014 not bot policy or routing.\n"
+bot:
+  endpoint: sip:07785766172@sipgate.co.uk
+  protocol: sip
+persona:
+  mood: neutral
+  response_style: formal
+config:
+  turn_timeout_s: 20
+  max_duration_s: 180
+  tts_voice: openai:nova
+  language: en-GB
+  record_transcript: true
+turns:
+- id: t0_pickup
+  kind: bot_listen
+  config:
+    timeout_s: 30.0
+- id: t1_intro
+  kind: harness_prompt
+  content:
+    text: 'Hello. This is an automated BotCheck end-to-end pipeline test. I am calling over a real SIP trunk to verify the audio path is working. Can you confirm you can hear me clearly?
+
+      '
+  listen: true
+  expect:
+    intent_recognized: true
+  config:
+    timeout_s: 20.0
+    min_response_duration_s: 1.0
+- id: t2_confirm
+  kind: harness_prompt
+  content:
+    text: "Excellent. Audio pipeline confirmed in both directions. One final check \u2014 can you say the word \"pipeline\" back to me?\n"
+  listen: true
+  config:
+    timeout_s: 15.0
+- id: t3_goodbye
+  kind: harness_prompt
+  content:
+    text: 'Perfect. End-to-end test complete. This call will now end. Thank you and goodbye.
+
+      '
+  listen: false
+scoring:
+  overall_gate: false
+  rubric:
+  - dimension: reliability
+    weight: 1.0
+    threshold: 0.5
+    gate: false
+tags:
+- e2e
+- sip
+- smoke-test
+- mobile

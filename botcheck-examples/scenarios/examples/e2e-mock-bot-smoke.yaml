@@ -1,0 +1,33 @@
+version: '1.0'
+id: e2e-mock-bot-smoke
+name: E2E Mock Bot Smoke Test
+type: reliability
+description: "End-to-end pipeline smoke test using the local Docker mock bot (AcmeCorp). No SIP trunk or phone required \u2014 harness and mock bot communicate entirely within LiveKit. Use this for local development and CI validation.\n"
+bot:
+  protocol: mock
+persona:
+  mood: neutral
+  style: formal
+turns:
+- id: t1_greeting
+  kind: harness_prompt
+  content:
+    text: Hello, I need help with my account.
+  listen: true
+- id: t2_question
+  kind: harness_prompt
+  content:
+    text: Can you tell me my current balance?
+  listen: true
+- id: t3_goodbye
+  kind: harness_prompt
+  content:
+    text: Thank you, goodbye.
+  listen: false
+scoring:
+  rubric:
+  - dimension: reliability
+    weight: 1.0
+    threshold: 0.5
+    gate: false
+  overall_gate: false

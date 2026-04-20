@@ -1,0 +1,25 @@
+version: '1.0'
+id: e2e-http-bot-smoke
+name: E2E HTTP Bot Smoke
+namespace: monitoring/direct-http
+description: Verifies the standalone http-test-bot through a direct HTTP transport profile. The scenario remains protocol mock so it can be uploaded through the current DSL.
+type: golden_path
+bot:
+  protocol: mock
+config:
+  stt_provider: deepgram
+  tts_voice: openai:alloy
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Hi, I'm calling about a billing issue.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't help with that
+    - I do not understand
+tags:
+- smoke
+- http
+- direct-http

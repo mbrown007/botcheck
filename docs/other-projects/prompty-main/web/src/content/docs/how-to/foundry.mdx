@@ -1,0 +1,306 @@
+---
+title: Use with Microsoft Foundry
+description: >
+  Connect Prompty to Microsoft Foundry — Foundry project endpoints and classic
+  Azure OpenAI endpoints, API key and Azure AD authentication,
+  complete .prompty files, and Python/TypeScript code.
+sidebar:
+  order: 4
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Prerequisites
+
+- A **Microsoft Foundry** project or an **Azure OpenAI resource** with a deployed model (e.g., `gpt-4o-mini`)
+- The resource **endpoint**:
+  - **Foundry project endpoint** (recommended): `https://<resource>.services.ai.azure.com/api/projects/<project>`
+  - **Classic Azure OpenAI endpoint** (legacy): `https://<resource>.openai.azure.com/`
+- Either an **API key** or **Azure AD credentials**
+
+<Tabs>
+  <TabItem label="Python">
+    ```bash
+    # API key auth
+    pip install prompty[jinja2,foundry]
+
+    # Azure AD auth (adds azure-identity)
+    pip install prompty[jinja2,foundry] azure-identity
+    ```
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```bash
+    npm install @prompty/core @prompty/foundry
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip" title="Migrating from Azure OpenAI?">
+  If your `.prompty` files use `provider: azure`, they still work — it's a
+  deprecated alias for `provider: foundry`. Update when convenient.
+  Similarly, `pip install prompty[azure]` still works as an alias for
+  `prompty[foundry]`.
+</Aside>
+
+---
+
+## Option A: API Key Authentication
+
+The simplest approach — use an API key from the Azure AI Foundry portal or Azure Portal.
+
+### 1. Write the `.prompty` File
+
+Create **`foundry-chat.prompty`**:
+
+```yaml
+---
+name: foundry-chat
+description: Chat completion with Microsoft Foundry (API key)
+model:
+  id: gpt-4o-mini
+  provider: foundry
+  apiType: chat
+  connection:
+    kind: key
+    endpoint: ${env:AZURE_AI_PROJECT_ENDPOINT}
+    apiKey: ${env:AZURE_AI_PROJECT_KEY}
+  options:
+    temperature: 0.7
+    maxOutputTokens: 1024
+inputSchema:
+  properties:
+    - name: question
+      kind: string
+      default: What is Microsoft Foundry?
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+---
+system:
+You are a helpful assistant. Answer concisely.
+
+user:
+{{question}}
+```
+
+<Aside type="note">
+  `model.id` is the **deployment name**, not the base model
+  name. If your deployment is called `my-gpt4o`, use `id: my-gpt4o`.
+</Aside>
+
+### 2. Run It
+
+<Tabs>
+  <TabItem label="Python">
+    ```python
+    import prompty
+
+    result = prompty.execute(
+        "foundry-chat.prompty",
+        inputs={"question": "What services does Microsoft Foundry offer?"},
+    )
+    print(result)
+    ```
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```typescript
+    import { execute } from "@prompty/core";
+
+    const result = await execute("foundry-chat.prompty", {
+      inputs: { question: "What services does Microsoft Foundry offer?" },
+    });
+
+    console.log(result);
+    ```
+  </TabItem>
+</Tabs>
+
+### 3. Environment Setup
+
+```bash
+# .env — Foundry project endpoint (recommended)
+AZURE_AI_PROJECT_ENDPOINT=https://my-resource.services.ai.azure.com/api/projects/my-project
+AZURE_AI_PROJECT_KEY=abc123...
+
+# .env — Classic Azure OpenAI endpoint (legacy, also works)
+# AZURE_OPENAI_ENDPOINT=https://my-resource.openai.azure.com/
+# AZURE_OPENAI_API_KEY=abc123...
+```
+
+---
+
+## Option B: Azure AD Authentication
+
+For production workloads, use Azure AD (Entra ID) with `DefaultAzureCredential`
+— no API keys to manage or rotate.
+
+### 1. Write the `.prompty` File
+
+Create **`foundry-chat-aad.prompty`**:
+
+```yaml
+---
+name: foundry-chat-aad
+description: Chat completion with Microsoft Foundry (Azure AD)
+model:
+  id: gpt-4o-mini
+  provider: foundry
+  apiType: chat
+  connection:
+    kind: reference
+    name: foundry_default
+  options:
+    temperature: 0.7
+    maxOutputTokens: 1024
+inputSchema:
+  properties:
+    - name: question
+      kind: string
+      default: What is Microsoft Foundry?
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+---
+system:
+You are a helpful assistant. Answer concisely.
+
+user:
+{{question}}
+```
+
+<Aside type="tip">
+  `kind: reference` tells Prompty to look up the connection by name at
+  runtime. This keeps credentials out of the `.prompty` file entirely.
+</Aside>
+
+### 2. Register the Connection and Run
+
+<Tabs>
+  <TabItem label="Python">
+    ```python
+    import os
+    from azure.identity import DefaultAzureCredential
+    import prompty
+
+    # Register the named connection before loading the prompt
+    prompty.register_connection(
+        "foundry_default",
+        {
+            "endpoint": os.environ["AZURE_AI_PROJECT_ENDPOINT"],
+            "credential": DefaultAzureCredential(),
+        },
+    )
+
+    result = prompty.execute(
+        "foundry-chat-aad.prompty",
+        inputs={"question": "What is Microsoft Foundry?"},
+    )
+    print(result)
+    ```
+
+    <Aside type="note">
+      `DefaultAzureCredential` automatically tries managed identity, Azure CLI,
+      VS Code, and other credential sources. No code changes needed between
+      local dev and production.
+    </Aside>
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```typescript
+    import { execute, registerConnection } from "@prompty/core";
+    import { DefaultAzureCredential } from "@azure/identity";
+
+    registerConnection("foundry_default", {
+      endpoint: process.env.AZURE_AI_PROJECT_ENDPOINT!,
+      credential: new DefaultAzureCredential(),
+    });
+
+    const result = await execute("foundry-chat-aad.prompty", {
+      inputs: { question: "What is Microsoft Foundry?" },
+    });
+
+    console.log(result);
+    ```
+  </TabItem>
+</Tabs>
+
+### 3. Required Azure RBAC
+
+The identity used by `DefaultAzureCredential` needs the
+**Cognitive Services OpenAI User** role on the resource:
+
+```bash
+az role assignment create \
+  --assignee <your-identity-object-id> \
+  --role "Cognitive Services OpenAI User" \
+  --scope /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<resource>
+```
+
+---
+
+## Comparing the Two Options
+
+| | API Key (`kind: key`) | Azure AD (`kind: reference`) |
+|---|---|---|
+| **Setup** | Copy key from portal | Assign RBAC role |
+| **Security** | Key in env var — can leak | Token-based — no static secret |
+| **Rotation** | Manual | Automatic |
+| **Best for** | Local dev, prototyping | Production, CI/CD |
+
+<Aside type="caution">
+  Never commit API keys to source control. Always use `${env:...}` references
+  or `kind: reference` connections.
+</Aside>
+
+---
+
+## Using a Shared Connection File
+
+If multiple `.prompty` files share the same Foundry config, extract it into a JSON
+file and reference it with `${file:...}`:
+
+**`shared/foundry-connection.json`**:
+
+```json
+{
+  "kind": "key",
+  "endpoint": "https://my-resource.services.ai.azure.com/api/projects/my-project",
+  "apiKey": "${env:AZURE_AI_PROJECT_KEY}"
+}
+```
+
+**`my-prompt.prompty`**:
+
+```yaml
+---
+name: shared-connection-demo
+model:
+  id: gpt-4o-mini
+  provider: foundry
+  connection: ${file:shared/foundry-connection.json}
+---
+system:
+You are a helpful assistant.
+
+user:
+{{question}}
+```
+
+This avoids duplicating endpoint and auth config across prompts.
+
+---
+
+## Environment Setup (Both Options)
+
+```bash
+# .env
+AZURE_AI_PROJECT_ENDPOINT=https://my-resource.services.ai.azure.com/api/projects/my-project
+AZURE_AI_PROJECT_KEY=abc123...                # Only needed for API key auth
+
+# Optional: specify deployment names per model type
+AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
+```

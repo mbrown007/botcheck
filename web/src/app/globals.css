@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+
+  --bg-base: 243 246 251;
+  --bg-surface: 255 255 255;
+  --bg-elevated: 238 243 249;
+  --bg-subtle: 227 235 245;
+
+  --brand: 21 94 239;
+  --brand-hover: 0 78 230;
+  --brand-muted: 219 232 255;
+
+  --pass: 2 122 72;
+  --pass-bg: 236 253 243;
+  --pass-border: 171 239 198;
+
+  --fail: 180 35 24;
+  --fail-bg: 254 243 242;
+  --fail-border: 254 205 202;
+
+  --warn: 181 71 8;
+  --warn-bg: 255 250 235;
+  --warn-border: 254 223 137;
+
+  --info: 21 94 239;
+  --info-bg: 239 248 255;
+  --info-border: 178 221 255;
+
+  --text-primary: 16 24 40;
+  --text-secondary: 52 64 84;
+  --text-muted: 102 112 133;
+  --text-inverse: 255 255 255;
+
+  --border: 208 213 221;
+  --border-subtle: 234 236 240;
+  --border-focus: 21 94 239;
+  --overlay: 16 24 40;
+
+  --editor-bg: 255 255 255;
+  --editor-surface: 248 250 252;
+  --editor-text: 15 23 42;
+  --editor-muted: 100 116 139;
+  --editor-accent: 29 78 216;
+  --editor-string: 4 120 87;
+  --editor-number: 185 28 28;
+  --editor-boolean: 180 83 9;
+  --editor-comment: 107 114 128;
+  --editor-punctuation: 55 65 81;
+
+  --flow-grid: 208 213 221;
+  --flow-grid-strong: 152 162 179;
+  --flow-edge: 71 84 103;
+  --flow-edge-active: 21 94 239;
+  --flow-controls-bg: 255 255 255;
+  --flow-controls-border: 208 213 221;
+  --flow-controls-shadow: 16 24 40;
+
+  --xy-controls-button-color: rgb(71 84 103);
+  --xy-controls-button-color-hover: rgb(16 24 40);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --bg-base: 12 17 23;
+  --bg-surface: 20 27 37;
+  --bg-elevated: 26 35 50;
+  --bg-subtle: 30 45 61;
+
+  --brand: 59 130 246;
+  --brand-hover: 37 99 235;
+  --brand-muted: 30 58 95;
+
+  --pass: 52 211 153;
+  --pass-bg: 6 78 59;
+  --pass-border: 6 95 70;
+
+  --fail: 248 113 113;
+  --fail-bg: 69 10 10;
+  --fail-border: 127 29 29;
+
+  --warn: 251 191 36;
+  --warn-bg: 69 26 3;
+  --warn-border: 120 53 15;
+
+  --info: 96 165 250;
+  --info-bg: 30 58 95;
+  --info-border: 29 78 216;
+
+  --text-primary: 241 245 249;
+  --text-secondary: 148 163 184;
+  --text-muted: 100 116 139;
+  --text-inverse: 255 255 255;
+
+  --border: 30 41 59;
+  --border-subtle: 15 23 42;
+  --border-focus: 59 130 246;
+  --overlay: 2 6 23;
+
+  --editor-bg: 15 23 42;
+  --editor-surface: 30 41 59;
+  --editor-text: 226 232 240;
+  --editor-muted: 100 116 139;
+  --editor-accent: 96 165 250;
+  --editor-string: 134 239 172;
+  --editor-number: 252 165 165;
+  --editor-boolean: 252 211 77;
+  --editor-comment: 107 114 128;
+  --editor-punctuation: 148 163 184;
+
+  --flow-grid: 30 41 59;
+  --flow-grid-strong: 71 85 105;
+  --flow-edge: 148 163 184;
+  --flow-edge-active: 96 165 250;
+  --flow-controls-bg: 20 27 37;
+  --flow-controls-border: 30 41 59;
+  --flow-controls-shadow: 2 6 23;
+
+  --xy-controls-button-color: rgb(55 65 81);
+  --xy-controls-button-color-hover: rgb(17 24 39);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: rgb(var(--bg-base));
+  color: rgb(var(--text-primary));
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+  max-width: 12px;
+  max-height: 12px;
+}
+
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid rgb(var(--flow-controls-border));
+  border-radius: 12px;
+  background-color: rgb(var(--flow-controls-bg) / 0.94);
+  box-shadow: 0 12px 28px -18px rgb(var(--flow-controls-shadow) / 0.65);
+  backdrop-filter: blur(10px);
+}
+
+.react-flow__controls-button {
+  border-bottom-color: rgb(var(--flow-controls-border));
+  background-color: transparent;
+}
+
+.react-flow__controls-button:hover {
+  background-color: rgb(var(--bg-elevated));
+}

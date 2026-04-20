@@ -1,0 +1,138 @@
+{
+  "properties": {
+    "ai_scenario_id": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ai Scenario Id"
+    },
+    "config": {
+      "additionalProperties": true,
+      "title": "Config",
+      "type": "object"
+    },
+    "dataset_source": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Source"
+    },
+    "evaluation_objective": {
+      "anyOf": [
+        {
+          "maxLength": 20000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evaluation Objective"
+    },
+    "is_active": {
+      "default": true,
+      "title": "Is Active",
+      "type": "boolean"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "namespace": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Namespace"
+    },
+    "opening_strategy": {
+      "default": "wait_for_bot_greeting",
+      "enum": [
+        "wait_for_bot_greeting",
+        "caller_opens"
+      ],
+      "title": "Opening Strategy",
+      "type": "string"
+    },
+    "persona_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Persona Id",
+      "type": "string"
+    },
+    "scenario_brief": {
+      "anyOf": [
+        {
+          "maxLength": 20000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scenario Brief"
+    },
+    "scenario_facts": {
+      "additionalProperties": true,
+      "title": "Scenario Facts",
+      "type": "object"
+    },
+    "scenario_id": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "scoring_profile": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scoring Profile"
+    }
+  },
+  "required": [
+    "scenario_id",
+    "persona_id"
+  ],
+  "title": "AIScenarioUpsertRequest",
+  "type": "object"
+}

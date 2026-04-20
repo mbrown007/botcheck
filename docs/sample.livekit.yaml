@@ -1,0 +1,54 @@
+# LiveKit Server Configuration (Production-Ready Local Deployment)
+# Documentation: https://docs.livekit.io/realtime/self-hosting/deployment/
+
+port: 7880
+bind_addresses:
+  - ""
+
+# API Key/Secret pairs for authentication. 
+# IMPORTANT: These must match LIVEKIT_API_KEY and LIVEKIT_API_SECRET in your BotCheck .env
+keys:
+  devkey: devsecret00000000000000000000000
+
+logging:
+  json: false
+  level: info
+
+rtc:
+  tcp_port: 7881
+  port_range:
+    start: 10000
+    end: 20000
+  
+  # CRITICAL for local hosting with external SIP providers (like Sipgate):
+  # Set this to 'true' and ensure your public IP is detectable, or hardcode it
+  # using the 'external_ip' field if your local machine is behind a complex NAT.
+  use_external_ip: true
+  
+  # If you have a static public IP, uncomment and set it here:
+  # external_ip: 1.2.3.4
+
+redis:
+  # Used for room state and SIP signaling coordination.
+  address: localhost:6379
+  db: 0
+
+# Turn server configuration for bypassing restrictive firewalls.
+turn:
+  enabled: true
+  # For local development without a dedicated domain/TLS, 
+  # LiveKit will provide auth-token based TURN over UDP/TCP.
+  udp_port: 3478
+  # If using a reverse proxy (like Caddy) for TLS, set the domain here:
+  # domain: livekit.your-local-domain.com
+
+# Enable Prometheus metrics for Grafana Alloy scraping.
+# This matches the 'livekit_server' target in your infra/monitoring/config.alloy
+prometheus:
+  port: 6789
+
+# SIP configuration. 
+# Note: While enabled here for signaling, the 'livekit-sip' binary 
+# should be run natively on your host machine to avoid Docker networking issues.
+sip:
+  enabled: true

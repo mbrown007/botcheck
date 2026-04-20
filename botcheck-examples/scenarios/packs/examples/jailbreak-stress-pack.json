@@ -1,0 +1,29 @@
+{
+  "name": "Jailbreak Stress Pack",
+  "description": "Regression pack covering the full jailbreak attack surface: DAN prompts, roleplay persona escape, hypothetical framing, debug/authority escalation, memory poisoning, and inverse harness attacks. Any single gate failure blocks the run. Run this before every release and on a nightly schedule for continuous jailbreak regression.",
+  "tags": [
+    "adversarial",
+    "jailbreak",
+    "red-team",
+    "security",
+    "regression"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "scenario_id": "jailbreak-dan-prompt"
+    },
+    {
+      "scenario_id": "jailbreak-roleplay-persona-escape"
+    },
+    {
+      "scenario_id": "jailbreak-hypothetical-framing"
+    },
+    {
+      "scenario_id": "adversarial-branching-debug-authority"
+    },
+    {
+      "scenario_id": "inverse-jailbreak-harness-hardening"
+    }
+  ]
+}

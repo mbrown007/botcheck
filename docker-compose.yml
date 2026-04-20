@@ -1,0 +1,506 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: botcheck
+      POSTGRES_USER: botcheck
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-botcheck_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U botcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    container_name: botcheck-aws
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=s3,secretsmanager
+      - DEBUG=1
+    volumes:
+      - "./infra/localstack:/etc/localstack/init/ready.d"
+      - "./.localstack:/var/lib/localstack"
+    mem_limit: 768m
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"       # HTTP / WebSocket (API + client connections)
+      - "7881:7881"       # TURN/TCP
+      - "7882:7882/udp"   # TURN/UDP
+    environment:
+      # Dev mode uses fixed key/secret — override in production
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}"
+      # Required for SIP service integration (LiveKit SIP uses Redis-backed signaling).
+      REDIS_HOST: redis:6379
+      # Expose Prometheus metrics on a dedicated port for Alloy scraping.
+      LIVEKIT_CONFIG: |
+        prometheus_port: 6789
+      # Forward LiveKit OTLP traces to Alloy (Tempo pipeline).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${LIVEKIT_OTEL_SERVICE_NAME:-livekit-server}
+
+  sip:
+    # livekit-sip must run NATIVELY on the Fedora host, not in Docker.
+    # Docker Desktop uses a Linux VM — even network_mode:host gives the VM's IP
+    # (192.168.65.x) in SIP Via headers, causing sipgate.co.uk to return 0 responses.
+    # Run: nohup /tmp/livekit-sip/livekit-sip --config=/tmp/sip-config.yaml > /tmp/sip.log 2>&1 &
+    # This container is kept for reference but should NOT be started on Docker Desktop.
+    profiles: ["sip-docker"]
+    image: livekit/sip:latest
+    network_mode: host
+    environment:
+      SIP_CONFIG_BODY: |
+        log_level: debug
+        api_key: ${LIVEKIT_API_KEY:-devkey}
+        api_secret: ${LIVEKIT_API_SECRET:-secret}
+        ws_url: ws://localhost:7880
+        redis:
+          address: localhost:6379
+        sip_port: 5060
+        rtp_port: 20000-20100
+        use_external_ip: true
+      # Forward SIP OTLP traces to Alloy (Tempo pipeline).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${SIP_OTEL_SERVICE_NAME:-livekit-sip}
+    depends_on:
+      livekit:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # BotCheck services
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://botcheck:${POSTGRES_PASSWORD:-botcheck_dev}@postgres/botcheck
+      REDIS_URL: redis://redis:6379
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+      ENABLE_OUTBOUND_SIP: ${ENABLE_OUTBOUND_SIP:-false}
+      SIP_SECRET_PROVIDER: ${SIP_SECRET_PROVIDER:-env}
+      SIP_SECRET_REF: ${SIP_SECRET_REF:-}
+      SIP_SECRET_REGION: ${SIP_SECRET_REGION:-us-east-1}
+      SIP_TRUNK_ID: ${SIP_TRUNK_ID:-}
+      SIP_AUTH_USERNAME: ${SIP_AUTH_USERNAME:-}
+      SIP_AUTH_PASSWORD: ${SIP_AUTH_PASSWORD:-}
+      SIP_DESTINATION_ALLOWLIST: ${SIP_DESTINATION_ALLOWLIST:-}
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      TTS_CACHE_ENABLED: ${TTS_CACHE_ENABLED:-true}
+      TTS_CACHE_PCM_FORMAT_VERSION: ${TTS_CACHE_PCM_FORMAT_VERSION:-v1}
+      TTS_PREVIEW_RATE_LIMIT_ATTEMPTS: ${TTS_PREVIEW_RATE_LIMIT_ATTEMPTS:-30}
+      TTS_PREVIEW_RATE_LIMIT_WINDOW_S: ${TTS_PREVIEW_RATE_LIMIT_WINDOW_S:-60}
+      TTS_PREVIEW_OPENAI_MODEL: ${TTS_PREVIEW_OPENAI_MODEL:-gpt-4o-mini-tts}
+      TTS_PREVIEW_REQUEST_TIMEOUT_S: ${TTS_PREVIEW_REQUEST_TIMEOUT_S:-20}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_change_in_production}
+      DEV_USER_TOKEN: ${DEV_USER_TOKEN:-dev-admin-token}
+      HARNESS_SECRET: ${HARNESS_SECRET:-dev-harness-secret}
+      JUDGE_SECRET: ${JUDGE_SECRET:-dev-judge-secret}
+      SCHEDULER_SECRET: ${SCHEDULER_SECRET:-dev-scheduler-secret}
+      METRICS_SCRAPE_TOKEN: ${METRICS_SCRAPE_TOKEN:-botcheck-dev-metrics-token}
+      ENVIRONMENT: development
+      ENABLE_MOCK_BOT: ${ENABLE_MOCK_BOT:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-api
+      FEATURE_PACKS_ENABLED: ${FEATURE_PACKS_ENABLED:-true}
+      FEATURE_AI_SCENARIOS_ENABLED: ${FEATURE_AI_SCENARIOS_ENABLED:-true}
+      FEATURE_DESTINATIONS_ENABLED: ${FEATURE_DESTINATIONS_ENABLED:-true}
+      RUN_DISPATCH_REQUIRE_HARNESS_HEALTHY: ${RUN_DISPATCH_REQUIRE_HARNESS_HEALTHY:-true}
+    ports:
+      - "127.0.0.1:7700:8000"
+    volumes:
+      - ./services/api/botcheck_api:/app/services/api/botcheck_api
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  eval-worker:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    command:
+      - "uv"
+      - "run"
+      - "--project"
+      - "services/api"
+      - "arq"
+      - "botcheck_api.grai.eval_worker.WorkerSettings"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://botcheck:${POSTGRES_PASSWORD:-botcheck_dev}@postgres/botcheck
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GRAI_EVAL_JUDGE_MODEL: ${GRAI_EVAL_JUDGE_MODEL:-claude-sonnet-4-6}
+      EVAL_CONCURRENCY_LIMIT: ${EVAL_CONCURRENCY_LIMIT:-20}
+      EVAL_REQUESTS_PER_SECOND: ${EVAL_REQUESTS_PER_SECOND:-0}
+      EVAL_JOB_TIMEOUT_S: ${EVAL_JOB_TIMEOUT_S:-7200}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-grai-eval-worker
+    volumes:
+      - ./services/api/botcheck_api:/app/services/api/botcheck_api
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    environment:
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+      BOTCHECK_API_URL: http://api:8000
+      HARNESS_SECRET: ${HARNESS_SECRET:-dev-harness-secret}
+      TENANT_ID: ${TENANT_ID:-default}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY required}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:?DEEPGRAM_API_KEY required}
+      TTS_CACHE_ENABLED: ${TTS_CACHE_ENABLED:-true}
+      TTS_CACHE_PCM_FORMAT_VERSION: ${TTS_CACHE_PCM_FORMAT_VERSION:-v1}
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      S3_REGION: us-east-1
+      S3_BUCKET_PREFIX: ${S3_BUCKET_PREFIX:-botcheck-artifacts}
+      METRICS_ENABLED: ${AGENT_METRICS_ENABLED:-true}
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: ${AGENT_METRICS_PORT:-9102}
+      SERVICE_HEARTBEAT_ENABLED: ${SERVICE_HEARTBEAT_ENABLED:-true}
+      SERVICE_HEARTBEAT_INTERVAL_S: ${SERVICE_HEARTBEAT_INTERVAL_S:-30}
+      SERVICE_HEARTBEAT_JITTER_S: ${SERVICE_HEARTBEAT_JITTER_S:-5}
+      FEATURE_AI_SCENARIOS_ENABLED: ${FEATURE_AI_SCENARIOS_ENABLED:-true}
+      TTS_AI_SCENARIO_SYNTHESIS_TIMEOUT_S: ${TTS_AI_SCENARIO_SYNTHESIS_TIMEOUT_S:-30}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-agent
+    ports:
+      - "127.0.0.1:9102:9102"
+    volumes:
+      - ./services/agent/src:/app/services/agent/src
+      - ./packages:/app/packages
+      - ./scenarios:/app/scenarios
+    depends_on:
+      - api
+      - livekit
+
+  # Dev-only mock bot — acts as the "system under test" so runs complete without
+  # a real SIP bot. Set ENABLE_MOCK_BOT=true in the API to dispatch it automatically.
+  mock-bot:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    command:
+      - "uv"
+      - "run"
+      - "--project"
+      - "services/agent"
+      - "python"
+      - "-m"
+      - "src.mock_bot"
+      - "start"
+    environment:
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY required}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:?DEEPGRAM_API_KEY required}
+    volumes:
+      - ./services/agent/src:/app/services/agent/src
+      - ./packages:/app/packages
+    depends_on:
+      - livekit
+
+  # Standalone chatbot for testing direct HTTP transport destinations.
+  # Supports ECHO, SCRIPTED, and AI (OpenAI) modes.
+  http-test-bot:
+    build:
+      context: .
+      dockerfile: services/http-test-bot/Dockerfile
+    environment:
+      HTTP_BOT_MODE: ${HTTP_BOT_MODE:-scripted}
+      HTTP_BOT_RESPONSE_MAP_JSON: '${HTTP_BOT_RESPONSE_MAP_JSON:-{"refund": "Our refund policy allows refunds within 30 days of purchase.", "billing support": "Please contact our billing support team at support@example.com.", "payment": "Our support team can help with payment issues. Please contact us."}}'
+      HTTP_BOT_DEFAULT_RESPONSE: "I am a test bot. How can I help?"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      PORT: 8080
+    ports:
+      - "127.0.0.1:8081:8080" # Exposed on 8081 for direct testing from host
+    volumes:
+      - ./services/http-test-bot:/app
+    depends_on:
+      - api
+
+  judge:
+    build:
+      context: .
+      dockerfile: services/judge/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://botcheck:${POSTGRES_PASSWORD:-botcheck_dev}@postgres/botcheck
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY required}
+      BOTCHECK_API_URL: http://api:8000
+      JUDGE_SECRET: ${JUDGE_SECRET:-dev-judge-secret}
+      SCHEDULER_SECRET: ${SCHEDULER_SECRET:-dev-scheduler-secret}
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      ENVIRONMENT: development
+      MULTI_SAMPLE_JUDGE: ${MULTI_SAMPLE_JUDGE:-false}
+      MULTI_SAMPLE_JUDGE_N: ${MULTI_SAMPLE_JUDGE_N:-3}
+      METRICS_ENABLED: ${JUDGE_METRICS_ENABLED:-true}
+      METRICS_HOST: 0.0.0.0
+      METRICS_PORT: ${JUDGE_METRICS_PORT:-9101}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-judge
+    ports:
+      - "127.0.0.1:9101:9101"
+    volumes:
+      - ./services/judge/botcheck_judge:/app/services/judge/botcheck_judge
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: services/judge/Dockerfile
+    command:
+      - "uv"
+      - "run"
+      - "--project"
+      - "services/judge"
+      - "arq"
+      - "botcheck_judge.workers.scheduler_worker.WorkerSettings"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://botcheck:${POSTGRES_PASSWORD:-botcheck_dev}@postgres/botcheck
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY required}
+      BOTCHECK_API_URL: http://api:8000
+      JUDGE_SECRET: ${JUDGE_SECRET:-dev-judge-secret}
+      SCHEDULER_SECRET: ${SCHEDULER_SECRET:-dev-scheduler-secret}
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      ENVIRONMENT: development
+      METRICS_ENABLED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-scheduler
+    volumes:
+      - ./services/judge/botcheck_judge:/app/services/judge/botcheck_judge
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  cache-worker:
+    build:
+      context: .
+      dockerfile: services/judge/Dockerfile
+    command:
+      - "uv"
+      - "run"
+      - "--project"
+      - "services/judge"
+      - "arq"
+      - "botcheck_judge.workers.cache_worker.WorkerSettings"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://botcheck:${POSTGRES_PASSWORD:-botcheck_dev}@postgres/botcheck
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY required}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      BOTCHECK_API_URL: http://api:8000
+      JUDGE_SECRET: ${JUDGE_SECRET:-dev-judge-secret}
+      SCHEDULER_SECRET: ${SCHEDULER_SECRET:-dev-scheduler-secret}
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      ENVIRONMENT: development
+      TTS_CACHE_ENABLED: ${TTS_CACHE_ENABLED:-true}
+      TTS_CACHE_OPENAI_MODEL: ${TTS_CACHE_OPENAI_MODEL:-gpt-4o-mini-tts}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: botcheck-cache-worker
+    volumes:
+      - ./services/judge/botcheck_judge:/app/services/judge/botcheck_judge
+      - ./packages:/app/packages
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    mem_limit: 512m
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    ports:
+      # Exposed on all interfaces so monitoring-assistant's Prometheus can federate
+      # metrics from this instance via host.docker.internal:9090.
+      - "9090:9090"
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/alerts:/etc/prometheus/alerts:ro
+      - ./infra/monitoring/metrics-scrape-token:/etc/prometheus/metrics-scrape-token:ro
+    depends_on:
+      - api
+      - judge
+      - agent
+
+  web:
+    build:
+      context: web
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      # NEXT_PUBLIC_* vars are client-side only (baked into the browser bundle).
+      # For SSR/pre-rendering, add a separate API_URL=http://api:8000 and update
+      # the server-side fetch path when SSR pages are introduced.
+      NEXT_PUBLIC_API_URL: http://localhost:7700
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    mem_limit: 2g
+    depends_on:
+      - api
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: botcheck-node-exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: botcheck-alloy
+    mem_limit: 512m
+    entrypoint: /bin/sh
+    command:
+      - -lc
+      - |
+        if [ "${METRICS_STACK:-prometheus}" = "alloy" ]; then
+          exec alloy run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
+        fi
+        exec alloy run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.traces-only.alloy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - METRICS_STACK=${METRICS_STACK:-prometheus}
+      - GRAFANA_CLOUD_URL=${GRAFANA_CLOUD_URL}
+      - GRAFANA_CLOUD_USER=${GRAFANA_CLOUD_USER}
+      - GRAFANA_CLOUD_TOKEN=${GRAFANA_CLOUD_TOKEN}
+      - GRAFANA_CLOUD_TEMPO_ENDPOINT=${GRAFANA_CLOUD_TEMPO_ENDPOINT:-tempo.example.com:443}
+      - GRAFANA_CLOUD_TEMPO_USER=${GRAFANA_CLOUD_TEMPO_USER:-0}
+      - GRAFANA_CLOUD_TEMPO_TOKEN=${GRAFANA_CLOUD_TEMPO_TOKEN:-placeholder-token}
+    volumes:
+      - ./infra/monitoring/config.alloy:/etc/alloy/config.alloy
+      - ./infra/monitoring/config.traces-only.alloy:/etc/alloy/config.traces-only.alloy
+      - ./infra/monitoring/metrics-scrape-token:/etc/alloy/metrics-scrape-token:ro
+    ports:
+      - "127.0.0.1:12345:12345"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      - api
+      - judge
+      - agent
+      - livekit
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: botcheck-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL:-noreply@localhost}
+      - API_DOMAIN=${API_DOMAIN:-api.localhost}
+      - LIVEKIT_DOMAIN=${LIVEKIT_DOMAIN:-livekit.localhost}
+    volumes:
+      - ./infra/proxy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - livekit
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

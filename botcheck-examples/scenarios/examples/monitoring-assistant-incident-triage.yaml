@@ -1,0 +1,54 @@
+version: '1.0'
+id: monitoring-assistant-incident-triage
+name: Monitoring Assistant Incident Triage
+namespace: monitoring-assistant/http-targeted-tasks
+description: Smoke test for first-response incident triage guidance over the monitoring assistant HTTP transport.
+type: golden_path
+http_request_context:
+  dashboard_context:
+    uid: checkout-incident
+    name: Checkout Incident Command
+    folder: Incidents
+    tags:
+    - incident
+    - checkout
+    time_range:
+      from: now-15m
+      to: now
+    variables:
+      service: checkout
+      region: eu-west-1
+    explore:
+      datasource: prom-main
+      queries:
+      - sum(rate(http_requests_total{service="checkout",status=~"5.."}[1m])) by (service)
+      - sum(rate(container_restarts_total{namespace="checkout"}[5m])) by (pod)
+  selected_context:
+  - type: datasource
+    id: prom-main
+    display_name: Prometheus
+  - type: metric
+    id: http_requests_total
+    display_name: Checkout Errors
+    metadata:
+      service: checkout
+      status: 5xx
+bot:
+  protocol: mock
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: We have a checkout outage. Give me a first 10-minute triage plan with impact checks, likely signals, and rollback versus mitigation guidance.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't help with incidents
+    - I can't access Grafana
+    - I do not know
+tags:
+- monitoring-assistant
+- http
+- smoke
+- incident-response
+- checkout

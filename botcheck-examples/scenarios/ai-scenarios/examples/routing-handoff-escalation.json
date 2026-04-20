@@ -1,0 +1,29 @@
+{
+  "ai_scenario_id": "ai_route_billing_escalation",
+  "scenario_id": "golden-path-billing",
+  "persona_id": "persona_impatient_frequent_flyer",
+  "name": "Billing Escalation Routing Check",
+  "scenario_brief": "Call the support line about an unexplained late fee, confirm the bot can understand the request, and push for transfer or escalation if first-line billing help stalls.",
+  "scenario_facts": {
+    "customer_name": "Ava Turner",
+    "account_tier": "gold",
+    "invoice_id": "INV-44192",
+    "late_fee_gbp": 35
+  },
+  "evaluation_objective": "The bot should identify the billing intent quickly, stay on task, and either resolve the billing issue or route cleanly to the right queue without inventing policy.",
+  "opening_strategy": "wait_for_bot_greeting",
+  "is_active": true,
+  "scoring_profile": "routing-smoke",
+  "dataset_source": "examples",
+  "config": {
+    "language": "en-GB",
+    "tts_voice": "openai:alloy",
+    "stt_provider": "deepgram",
+    "stt_model": "nova-2-phonecall",
+    "stt_endpointing_ms": 500,
+    "transcript_merge_window_s": 2.0,
+    "turn_timeout_s": 25,
+    "max_duration_s": 300,
+    "max_total_turns": 8
+  }
+}

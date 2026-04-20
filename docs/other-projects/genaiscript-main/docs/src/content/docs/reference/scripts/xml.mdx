@@ -1,0 +1,72 @@
+---
+title: XML
+sidebar:
+  order: 9.1
+description: Discover how to automatically parse XML files and convert them to
+  JSON objects, enabling efficient data handling, RSS feed parsing, and file
+  processing.
+keywords:
+  - XML parsing
+  - JSON conversion
+  - file processing
+  - RSS feeds
+  - data extraction
+hero:
+  image:
+    alt: "An 8-bit-style geometric illustration features three main icons: a
+      computer file labeled with XML symbols, a basic document showing bracket
+      shapes, and a square marked with curly braces to represent JSON. These
+      icons are connected by one arrow to symbolize parsing. Nearby, a feed
+      symbol and another arrow lead toward a plain geometric representation of a
+      book, illustrating the conversion of RSS to plain text. The design uses
+      five flat corporate colors, simple forms, no background, and avoids extra
+      details, arranged within a small square format."
+    file: ./xml.png
+
+---
+
+The `def` function will automatically parse XML files and extract text from them.
+
+```js wrap
+def("DOCS", env.files) // contains some xml files
+def("XML", env.files, { endsWith: ".xml" }) // only xml
+```
+
+## `parse`
+
+The global `XML.parse` function reads an XML file and converts it to a JSON object.
+
+```js "XML.parse"
+const res = XML.parse('<xml attr="1"><child /></xml>')
+```
+
+Attribute names are prepended with "@\_".
+
+```json
+{
+    "xml": {
+        "@_attr": "1",
+        "child": {}
+    }
+}
+```
+
+## RSS
+
+You can use `XML.parse` to parse an RSS feed into a object.
+
+```js "XML.parse"
+const res = await fetch("https://dev.to/feed")
+const { rss } = XML.parse(await res.text())
+// channel -> item[] -> { title, description, ... }
+```
+
+Since RSS feeds typically return a rendered HTML description, you can use `parsers.HTMLToText` 
+to convert it to back plain text.
+
+```js
+const articles = items.map(({ title, description }) => ({
+    title,
+    description: parsers.HTMLToText(description)
+}))
+```

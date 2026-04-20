@@ -1,0 +1,15 @@
+{
+    # Global options
+    email {$ACME_EMAIL}
+}
+
+# Proxy API traffic
+{$API_DOMAIN} {
+    reverse_proxy api:8000
+}
+
+# Proxy LiveKit traffic (Control Plane)
+# Note: Media traffic (UDP) still goes directly to ports 7882/10000-20000
+{$LIVEKIT_DOMAIN} {
+    reverse_proxy livekit:7880
+}

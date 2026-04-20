@@ -1,0 +1,17 @@
+{
+  "name": "Monitoring Assistant Local SSE",
+  "protocol": "http",
+  "endpoint": "http://localhost:18081/api/chat",
+  "headers": {},
+  "direct_http_config": {
+    "method": "POST",
+    "request_content_type": "json",
+    "request_text_field": "message",
+    "request_history_field": null,
+    "request_session_id_field": "session_id",
+    "response_text_field": "message",
+    "timeout_s": 60,
+    "max_retries": 1
+  },
+  "is_active": true
+}

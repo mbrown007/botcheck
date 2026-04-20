@@ -1,0 +1,177 @@
+---
+title: Getting Started
+description: >
+  Get up and running with Prompty — install the runtime,
+  write your first prompt, and run it.
+sidebar:
+  order: 1
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## What is Prompty?
+
+Prompty is a **markdown file format** for LLM prompts. A `.prompty` file
+combines structured YAML frontmatter (model config, inputs, tools) with
+a markdown body that becomes the prompt instructions. The runtime loads,
+renders, parses, and executes these files.
+
+```text
+┌─────────────────────────────┐
+│  .prompty file              │
+│  ┌───────────────────────┐  │
+│  │ --- (YAML frontmatter)│  │  → model, inputs, tools, template config
+│  │ ---                   │  │
+│  │ Markdown body         │  │  → prompt instructions with template syntax
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+## Installation
+
+<Tabs>
+  <TabItem label="Python">
+    ```bash
+    # Core + Jinja2 renderer + OpenAI provider
+    uv pip install prompty[jinja2,openai]
+
+    # With Microsoft Foundry support
+    uv pip install prompty[jinja2,foundry]
+
+    # Everything
+    uv pip install prompty[all]
+    ```
+
+    <Aside type="note">
+      Prompty v2 requires **Python ≥ 3.11**. We recommend using
+      [uv](https://docs.astral.sh/uv/) for environment management.
+    </Aside>
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```bash
+    # Core + OpenAI provider
+    npm install @prompty/core @prompty/openai
+
+    # With Microsoft Foundry support
+    npm install @prompty/core @prompty/foundry
+
+    # With Anthropic support
+    npm install @prompty/core @prompty/anthropic
+    ```
+  </TabItem>
+  <TabItem label="C#">
+    <Aside type="tip">
+      C# support is coming soon. See the [Implementation](/implementation/csharp/) page for status.
+    </Aside>
+  </TabItem>
+</Tabs>
+
+## Write Your First `.prompty` File
+
+Create a file called `greeting.prompty`:
+
+```yaml
+---
+name: greeting
+description: A friendly greeting prompt
+model:
+  id: gpt-4o-mini
+  provider: openai
+  connection:
+    kind: key
+    apiKey: ${env:OPENAI_API_KEY}
+inputs:
+  - name: userName
+    kind: string
+    default: World
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+---
+system:
+You are a friendly assistant who greets people warmly.
+
+user:
+Say hello to {{userName}} and ask how their day is going.
+```
+
+## Run It
+
+<Tabs>
+  <TabItem label="Python">
+    ```python
+    import prompty
+
+    # All-in-one: load → render → parse → execute → process
+    result = prompty.execute(
+        "greeting.prompty",
+        inputs={"userName": "Jane"},
+    )
+    print(result)
+    # "Hello Jane! 👋 How's your day going so far?"
+    ```
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```typescript
+    import { execute } from "@prompty/core";
+    import "@prompty/openai";
+
+    const result = await execute("greeting.prompty", {
+      userName: "Jane",
+    });
+    console.log(result);
+    // "Hello Jane! 👋 How's your day going so far?"
+    ```
+  </TabItem>
+</Tabs>
+
+## Step-by-Step Pipeline
+
+For more control, use the pipeline stages individually:
+
+<Tabs>
+  <TabItem label="Python">
+    ```python
+    import prompty
+
+    # 1. Load the .prompty file → typed Prompty object
+    agent = prompty.load("greeting.prompty")
+
+    # 2. Render template + parse → list[Message]
+    messages = prompty.prepare(agent, inputs={"userName": "Jane"})
+
+    # 3. Call the LLM + process → clean result
+    result = prompty.run(agent, messages)
+    ```
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```typescript
+    import { load, prepare, run } from "@prompty/core";
+    import "@prompty/openai";
+
+    const agent = await load("greeting.prompty");
+    const messages = await prepare(agent, { userName: "Jane" });
+    const result = await run(agent, messages);
+    ```
+  </TabItem>
+</Tabs>
+
+## Environment Variables
+
+Use `${env:VAR_NAME}` in frontmatter to reference environment variables.
+Create a `.env` file in your project root:
+
+```bash
+OPENAI_API_KEY=sk-your-key-here
+```
+
+Prompty automatically loads `.env` files.
+
+## Next Steps
+
+- [The .prompty File Format](/core-concepts/file-format/) — understand the anatomy of a `.prompty` file
+- [Pipeline Architecture](/core-concepts/pipeline/) — how render → parse → execute → process works
+- [Schema Reference](/reference/) — all available frontmatter properties
+- [How-To Guides](/how-to/openai/) — practical recipes for common tasks

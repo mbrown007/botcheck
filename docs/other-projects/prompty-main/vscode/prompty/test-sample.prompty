@@ -1,0 +1,34 @@
+---
+name: test-prompt
+description: A sample v2 prompty file for testing the extension
+model: gpt-4o
+template:
+  format: jinja2
+  parser: prompty
+metadata:
+  authors:
+    - test
+  tags:
+    - sample
+    - v2
+inputSchema:
+  properties:
+    - name: question
+      kind: string
+      description: The question to answer
+      required: true
+    - name: context
+      kind: string
+      description: Optional context
+      default: ""
+    - name: thread
+      kind: thread
+      description: Optional thread for conversation history
+      default: {}
+---
+system:
+You are a helpful assistant that answers questions concisely.
+Use the following context if provided: {{context}}
+
+user[name="Alice"]:
+{{question}}

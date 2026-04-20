@@ -1,0 +1,11 @@
+{
+  "jacdac.ServoReg.ActualAngle": "Read-only ° i16.16 (int32_t). The current physical position of the arm, if the device has a way to sense the position.\n* ```\nconst [actualAngle] = jdunpack<[number]>(buf, \"i16.16\")\n```",
+  "jacdac.ServoReg.Angle": "Read-write ° i16.16 (int32_t). Specifies the angle of the arm (request).\n* ```\nconst [angle] = jdunpack<[number]>(buf, \"i16.16\")\n```",
+  "modules.ServoClient.actualAngle|block": "%servo actual angle (°)",
+  "modules.ServoClient.onActualAngleChangedBy|block": "on %servo actual angle changed by %threshold (°)",
+  "modules.ServoClient.run|block": "servo continuous %servo run at %speed=speedPicker \\%",
+  "modules.servo1|block": "servo1",
+  "{id:category}Modules": "Modules",
+  "{id:group}Servo": "Servo",
+  "{id:group}Servo (Continuous)": "Servo (Continuous)"
+}

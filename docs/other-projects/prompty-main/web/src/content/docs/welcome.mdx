@@ -1,0 +1,91 @@
+---
+title: Welcome to Prompty
+description: >
+  Prompty is a markdown file format for LLM prompts. Define model config,
+  inputs, tools, and templates in YAML frontmatter — then execute across
+  Python, TypeScript, and more.
+sidebar:
+  order: 1
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## What is Prompty?
+
+**Prompty** is an asset class and format for LLM prompts designed to enhance
+observability, understandability, and portability for developers. A `.prompty`
+file combines structured YAML frontmatter with a markdown prompt body — making
+prompts versionable, testable, and executable across languages.
+
+```yaml
+---
+name: greeting
+model:
+  id: gpt-4o-mini
+  provider: openai
+  connection:
+    kind: key
+    apiKey: ${env:OPENAI_API_KEY}
+inputs:
+  - name: userName
+    kind: string
+    default: World
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+---
+system:
+You are a friendly assistant.
+
+user:
+Say hello to {{userName}}.
+```
+
+<Tabs>
+  <TabItem label="Python">
+    ```python
+    import prompty
+
+    result = prompty.execute("greeting.prompty", inputs={"userName": "Jane"})
+    print(result)  # "Hello Jane! How can I help you today?"
+    ```
+  </TabItem>
+  <TabItem label="TypeScript">
+    ```typescript
+    import { execute } from "@prompty/core";
+    import "@prompty/openai";
+
+    const result = await execute("greeting.prompty", { userName: "Jane" });
+    ```
+  </TabItem>
+</Tabs>
+
+## Key Features
+
+- **One file, complete prompt** — model config, inputs, tools, and instructions in a single `.prompty` file
+- **Multi-language runtimes** — Python and TypeScript today, C# coming soon
+- **Pipeline architecture** — render → parse → execute → process, each stage swappable
+- **Agent mode** — built-in tool-calling loop with error recovery
+- **Structured output** — define output schemas, get typed JSON back
+- **Streaming** — chunk-by-chunk delivery with full tracing support
+- **Pluggable tracing** — console, JSON file, or OpenTelemetry backends
+- **VS Code extension** — syntax highlighting, autocomplete, run & debug, trace viewer
+
+## Quick Links
+
+| | |
+|---|---|
+| 🚀 **[Getting Started](/getting-started/)** | Install, write your first prompt, run it |
+| 📖 **[Core Concepts](/core-concepts/)** | File format, pipeline, connections, tools, tracing |
+| 📋 **[Schema Reference](/reference/)** | All frontmatter properties (auto-generated) |
+| 🔧 **[How-To Guides](/how-to/)** | Practical recipes for common tasks |
+| 🐍 **[Python](/implementation/python/)** | Python runtime guide |
+| 📘 **[TypeScript](/implementation/typescript/)** | TypeScript runtime guide |
+
+## Contributing
+
+Prompty is [open source](https://github.com/microsoft/prompty). We welcome
+contributions to the runtimes, tooling, and documentation.
+See the [Contributing guide](/contributing/) to get started.

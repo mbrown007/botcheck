@@ -1,0 +1,12 @@
+version: "1.0"
+name: "scheduled-production-regression"
+description: >
+  Production-facing regression pack for scheduled monitoring runs. Includes
+  golden path, routing, compliance, and adversarial hardening checks.
+
+scenarios:
+  - golden-path-billing
+  - routing-transfer-billing
+  - compliance-pii-refusal
+  - jailbreak-dan-prompt
+  - inverse-jailbreak-harness-hardening

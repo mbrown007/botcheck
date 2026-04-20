@@ -1,0 +1,387 @@
+description: Monitoring assistant alert investigation eval
+metadata:
+  source_dataset: /home/marc/Documents/github/monitoring-assistant/tests/evals/dataset.yaml
+  transport_mode: direct-http
+  focus: alert-investigation
+  notes: >
+    Alert-led investigation suite for the monitoring assistant. This focuses on
+    active alerts, symptom isolation, rollback-versus-mitigation decisions, and
+    dependency-versus-regression evidence gathering using iframe-style context.
+prompts:
+  - label: alert-investigation
+    raw: "{{message}}"
+tests:
+  - description: Active alert summary identifies likely primary symptom
+    vars:
+      message: Summarize active alerts and identify likely primary symptom.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - alert-investigation
+      - alerts
+    metadata:
+      source_case_id: INC-002
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "active-alerts-overview"
+          name: "Active Alerts Overview"
+          folder: "Incidents"
+          tags:
+            - "alerts"
+            - "incident"
+          time_range:
+            from: "now-15m"
+            to: "now"
+          variables:
+            service: "checkout"
+            severity: "page"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[1m])) by (service)"
+              - "sum(ALERTS{alertstate=\"firing\",service=\"checkout\"}) by (alertname, severity)"
+        selected_context:
+          - type: "metric"
+            id: "ALERTS"
+            display_name: "Firing Alerts"
+            metadata:
+              service: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - alert
+          - symptom
+          - impact
+          - primary
+        weight: 0.6
+
+  - description: Latency spike investigation connects metrics to timing
+    vars:
+      message: Do you see an unusual latency spike pattern in this view?
+    tags:
+      - monitoring-assistant
+      - anomaly-detection
+      - alert-investigation
+      - latency
+    metadata:
+      source_case_id: ANO-002
+      source_category: anomaly_detection
+      http_request_context:
+        dashboard_context:
+          uid: "latency-spike-investigation"
+          name: "Latency Spike Investigation"
+          folder: "Incidents"
+          tags:
+            - "latency"
+            - "investigation"
+          time_range:
+            from: "now-30m"
+            to: "now"
+          variables:
+            service: "checkout"
+            route: "/api/checkout"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service=\"checkout\"}[5m])))"
+        selected_context:
+          - type: "metric"
+            id: "http_request_duration_seconds_bucket"
+            display_name: "Checkout latency histogram"
+            metadata:
+              route: "/api/checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - latency
+          - spike
+          - timing
+          - investigate
+        weight: 0.6
+
+  - description: Error spread analysis distinguishes broad versus isolated impact
+    vars:
+      message: Is this error increase broad or isolated to one dimension?
+    tags:
+      - monitoring-assistant
+      - anomaly-detection
+      - alert-investigation
+      - blast-radius
+    metadata:
+      source_case_id: ANO-004
+      source_category: anomaly_detection
+      http_request_context:
+        dashboard_context:
+          uid: "error-blast-radius"
+          name: "Error Blast Radius"
+          folder: "Incidents"
+          tags:
+            - "errors"
+            - "blast-radius"
+          time_range:
+            from: "now-20m"
+            to: "now"
+          variables:
+            service: "checkout"
+            dimension: "region"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[5m])) by (region, service)"
+        selected_context:
+          - type: "label"
+            id: "region"
+            display_name: "region"
+            metadata:
+              service: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 14
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - broad
+          - isolated
+          - dimension
+          - region
+        weight: 0.6
+
+  - description: Log pattern investigation ties logs back to the spike
+    vars:
+      message: Show me suspicious log patterns linked to this spike.
+    tags:
+      - monitoring-assistant
+      - anomaly-detection
+      - alert-investigation
+      - logs
+    metadata:
+      source_case_id: ANO-005
+      source_category: anomaly_detection
+      http_request_context:
+        dashboard_context:
+          uid: "spike-log-correlation"
+          name: "Spike Log Correlation"
+          folder: "Incidents"
+          tags:
+            - "logs"
+            - "correlation"
+          time_range:
+            from: "now-15m"
+            to: "now"
+          variables:
+            service: "checkout"
+          explore:
+            datasource: "loki-main"
+            queries:
+              - "{app=\"checkout\"} |= \"timeout\""
+              - "{app=\"checkout\"} |= \"upstream\""
+        selected_context:
+          - type: "datasource"
+            id: "loki-main"
+            display_name: "Loki"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 14
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - log
+          - pattern
+          - timeout
+          - spike
+        weight: 0.6
+
+  - description: Rollback versus mitigation guidance produces a decision frame
+    vars:
+      message: What should I check first to decide rollback vs mitigation?
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - alert-investigation
+      - rollback
+    metadata:
+      source_case_id: INC-004
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "rollback-vs-mitigation"
+          name: "Rollback Versus Mitigation"
+          folder: "Incidents"
+          tags:
+            - "rollback"
+            - "mitigation"
+          time_range:
+            from: "now-20m"
+            to: "now"
+          variables:
+            service: "checkout"
+            deployment: "2026.03.18-1"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[5m])) by (service)"
+              - "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"checkout\"}[5m])))"
+        selected_context:
+          - type: "metric"
+            id: "http_requests_total"
+            display_name: "Checkout error rate"
+            metadata:
+              deployment: "2026.03.18-1"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - rollback
+          - mitigation
+          - verify
+          - decision
+        weight: 0.6
+
+  - description: Dependency versus regression evidence names both hypotheses
+    vars:
+      message: Find evidence for whether this is dependency failure or app regression.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - alert-investigation
+      - dependency-analysis
+    metadata:
+      source_case_id: INC-005
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "dependency-vs-regression"
+          name: "Dependency vs Regression"
+          folder: "Incidents"
+          tags:
+            - "dependency"
+            - "regression"
+          time_range:
+            from: "now-30m"
+            to: "now"
+          variables:
+            service: "checkout"
+            upstream: "payments"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[5m])) by (upstream)"
+              - "sum(rate(container_restarts_total{namespace=\"checkout\"}[5m])) by (pod)"
+        selected_context:
+          - type: "metric"
+            id: "container_restarts_total"
+            display_name: "Container restarts"
+            metadata:
+              namespace: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - dependency
+          - regression
+          - evidence
+          - verify
+        weight: 0.6
+
+  - description: Containment actions stay practical and near-term
+    vars:
+      message: Give me containment actions I can do in the next 15 minutes.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - alert-investigation
+      - containment
+    metadata:
+      source_case_id: INC-006
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "containment-actions"
+          name: "Containment Actions"
+          folder: "Incidents"
+          tags:
+            - "containment"
+            - "incident"
+          time_range:
+            from: "now-15m"
+            to: "now"
+          variables:
+            service: "checkout"
+            severity: "sev1"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - contain
+          - reduce
+          - verify
+          - traffic
+        weight: 0.6
+
+  - description: Hypothesis tree response names branches and checks
+    vars:
+      message: Propose a root-cause hypothesis tree from current evidence.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - alert-investigation
+      - hypothesis-tree
+    metadata:
+      source_case_id: INC-007
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "root-cause-hypotheses"
+          name: "Root Cause Hypotheses"
+          folder: "Incidents"
+          tags:
+            - "hypothesis"
+            - "root-cause"
+          time_range:
+            from: "now-20m"
+            to: "now"
+          variables:
+            service: "checkout"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(ALERTS{alertstate=\"firing\",service=\"checkout\"}) by (alertname)"
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[5m])) by (service)"
+        selected_context:
+          - type: "metric"
+            id: "ALERTS"
+            display_name: "Alert firing state"
+            metadata:
+              service: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - hypothesis
+          - root cause
+          - confirm
+          - evidence
+        weight: 0.6

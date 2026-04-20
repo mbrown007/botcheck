@@ -1,0 +1,36 @@
+// Grafana Alloy config for BotCheck traces only.
+// Use this in local/dev when Prometheus is the authoritative metrics stack and
+// Alloy is only needed as the OTLP trace collector boundary.
+//
+// Traces are forwarded to the local Tempo instance running in the
+// monitoring-assistant docker stack (host port 14317).
+// Set METRICS_STACK=prometheus (default) to use this config.
+
+otelcol.receiver.otlp "botcheck" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  output {
+    traces = [otelcol.exporter.otlp.local_tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "local_tempo" {
+  client {
+    // monitoring-assistant Tempo exposed on the host at port 14317.
+    // host.docker.internal resolves to the host gateway from within Alloy's container.
+    endpoint = "host.docker.internal:14317"
+    tls {
+      insecure = true
+    }
+  }
+}

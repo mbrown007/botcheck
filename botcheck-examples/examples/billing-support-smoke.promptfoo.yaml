@@ -1,0 +1,40 @@
+description: Billing support smoke eval
+prompts:
+  - label: helpful
+    raw: "Answer the user question clearly: {{question}}"
+tests:
+  - description: Refund policy mentions refunds
+    vars:
+      question: "What is the refund policy?"
+    tags:
+      - billing
+      - smoke-test
+    threshold: 0.8
+    assert:
+      - type: contains
+        value: refund
+        weight: 1.0
+
+  - description: Billing contact reply mentions support
+    vars:
+      question: "How do I contact billing support?"
+    tags:
+      - billing
+      - smoke-test
+    threshold: 0.8
+    assert:
+      - type: icontains
+        value: support
+        weight: 1.0
+
+  - description: Payment help reply is non-empty and concise
+    vars:
+      question: "I need help with a payment issue."
+    tags:
+      - billing
+      - smoke-test
+    threshold: 0.8
+    assert:
+      - type: word-count
+        threshold: 3
+        weight: 1.0

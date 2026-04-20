@@ -1,0 +1,232 @@
+groups:
+  - name: botcheck-voice-quality
+    interval: 30s
+    rules:
+      - alert: BotCheckVoiceQualityGateBreach
+        expr: sum by (trigger_source) (increase(botcheck_voice_quality_threshold_breaches_total{severity="gate"}[15m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: judge
+        annotations:
+          summary: "Voice-quality gate breach detected"
+          description: "One or more deterministic voice metrics crossed gate thresholds within 15m (trigger_source={{ $labels.trigger_source }})."
+
+      - alert: BotCheckVoiceQualityWarningTrend
+        expr: sum by (trigger_source) (increase(botcheck_voice_quality_threshold_breaches_total{severity="warn"}[30m])) >= 3
+        for: 5m
+        labels:
+          severity: warning
+          service: judge
+        annotations:
+          summary: "Voice-quality warning trend"
+          description: "At least 3 warning-level voice metric breaches in 30m (trigger_source={{ $labels.trigger_source }})."
+
+      - alert: BotCheckScheduledQualityRegression
+        expr: increase(botcheck_voice_quality_runs_total{result="fail",trigger_source="scheduled"}[1h]) >= 2
+        for: 0m
+        labels:
+          severity: critical
+          service: judge
+        annotations:
+          summary: "Scheduled run quality regression"
+          description: "Two or more scheduled runs failed deterministic voice-quality thresholds in the last hour."
+
+  - name: botcheck-run-lifecycle
+    interval: 30s
+    rules:
+      - alert: BotCheckSIPDispatchFailures
+        expr: increase(botcheck_sip_dispatch_total{outcome="error"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Outbound SIP dispatch failures detected"
+          description: "At least one outbound SIP dispatch failed within 15m."
+
+      - alert: BotCheckSIPTelephonyDown
+        expr: (sum(increase(botcheck_sip_dispatch_total{outcome="error"}[15m])) >= 3) and (sum(increase(botcheck_sip_dispatch_total{outcome="success"}[15m])) == 0)
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "SIP telephony path appears down"
+          description: ">=3 SIP dispatch errors with zero successful SIP dispatches in 15m. Likely trunk auth/registration/provider outage; validate trunk status immediately."
+
+      - alert: BotCheckJudgeErrorRateHigh
+        expr: (sum(rate(botcheck_judge_runs_total{outcome="error"}[10m])) / clamp_min(sum(rate(botcheck_judge_runs_total[10m])), 0.001)) > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          service: judge
+        annotations:
+          summary: "Judge error rate above 10%"
+          description: "Judge worker error ratio is above 10% for 10m."
+
+      - alert: BotCheckTTSCacheFallbackRateHigh
+        expr: sum(increase(botcheck_tts_cache_fallback_total[5m])) >= 3
+        for: 0m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "Harness TTS cache fallback rate is elevated"
+          description: "Harness is falling back to live TTS due to cache/S3 read errors. Check S3 connectivity and cache worker health."
+
+      - alert: BotCheckBranchClassifierTimeoutRateHigh
+        expr: (sum(increase(botcheck_branch_classifier_calls_total{outcome="timeout"}[10m])) / clamp_min(sum(increase(botcheck_branch_classifier_calls_total[10m])), 1)) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "Branch classifier timeout rate above 5%"
+          description: "Branch classifier is timing out frequently (timeout ratio >5% over 10m). Runs will fall back to default branch, which may mask routing degradation."
+
+      - alert: BotCheckRunHeartbeatStaleRateHigh
+        expr: (sum(increase(botcheck_run_reaper_actions_total{outcome="heartbeat_stale"}[15m])) / clamp_min(sum(increase(botcheck_run_reaper_actions_total[15m])), 1)) > 0.10 and sum(increase(botcheck_run_reaper_actions_total[15m])) >= 20
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Run heartbeat stale count is elevated"
+          description: "Reaper is seeing repeated stale-heartbeat runs. Investigate harness callback health and network reachability before runs become overdue."
+
+      - alert: BotCheckHeartbeatCallbackErrorRateHigh
+        expr: (sum(increase(botcheck_agent_api_callbacks_total{endpoint="heartbeat",outcome="error"}[10m])) / clamp_min(sum(increase(botcheck_agent_api_callbacks_total{endpoint="heartbeat"}[10m])), 1)) > 0.05 and sum(increase(botcheck_agent_api_callbacks_total{endpoint="heartbeat"}[10m])) >= 20
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "Heartbeat callback error rate above 5%"
+          description: "Harness heartbeat callbacks to the API are failing above threshold. Verify agent->API connectivity, auth secret alignment, and API heartbeat endpoint health."
+
+      - alert: BotCheckScheduleConsecutiveFailures
+        expr: max by (schedule_id, target_type) (botcheck_schedule_consecutive_failures{target_type="scenario"}) >= 2 and sum by (schedule_id, target_type) (increase(botcheck_schedule_run_outcomes_total{outcome=~"failed|error",target_type="scenario"}[15m])) >= 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Schedule retry policy exhausted"
+          description: "Schedule {{ $labels.schedule_id }} has reached two or more consecutive terminal failures, with at least two failed/error scheduled runs in the last 15m. Investigate the schedule's recent run history, target number, and transport profile before the next dispatch."
+
+      - alert: BotCheckProviderCircuitOpen
+        expr: max by (source, provider, service, component) (botcheck_provider_circuit_state{state="open"}) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Provider circuit open for sustained period"
+          description: "Provider circuit remains open for >5m (source={{ $labels.source }}, provider={{ $labels.provider }}, service={{ $labels.service }}, component={{ $labels.component }}). Check provider availability and fallback paths."
+
+      - alert: BotCheckProviderCircuitRejectionsHigh
+        expr: sum by (provider, service, component) (increase(botcheck_provider_circuit_rejections_total[10m])) >= 10
+        for: 0m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Provider circuit rejections elevated"
+          description: "Circuit rejections are elevated for provider={{ $labels.provider }}, service={{ $labels.service }}, component={{ $labels.component }} over 10m. Investigate upstream degradation and fallback behaviour."
+
+      - alert: BotCheckGraiEvalWorkerInternalErrors
+        expr: (sum(rate(botcheck_grai_eval_runs_total{outcome="error"}[10m])) / clamp_min(sum(rate(botcheck_grai_eval_runs_total[10m])), 0.001)) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Grai eval worker internal errors detected"
+          description: "One or more Grai eval runs ended with internal worker/runtime error state in the last 15m. This is distinct from ordinary failed assertions and usually indicates transport, persistence, or worker logic issues."
+
+  - name: botcheck-ai-latency
+    interval: 30s
+    rules:
+      - alert: BotCheckAIBotToCallerReplyLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(botcheck_ai_caller_reply_latency_seconds_bucket{scenario_kind="ai"}[15m]))) > 1.7 and sum(rate(botcheck_ai_caller_reply_latency_seconds_count{scenario_kind="ai"}[15m])) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "AI caller reply latency p95 above target"
+          description: "p95 bot-to-caller reply latency is above 1.7s for 10m. Check STT listen, AI decision, and TTS first-byte segments before staging sign-off."
+
+      - alert: BotCheckAIBotToCallerReplyLatencyP95Critical
+        expr: histogram_quantile(0.95, sum by (le) (rate(botcheck_ai_caller_reply_latency_seconds_bucket{scenario_kind="ai"}[15m]))) > 2.5 and sum(rate(botcheck_ai_caller_reply_latency_seconds_count{scenario_kind="ai"}[15m])) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: agent
+        annotations:
+          summary: "AI caller reply latency p95 exceeds release gate"
+          description: "p95 bot-to-caller reply latency is above 2.5s for 5m. This breaches the Phase 17 staging gate for live AI scenarios."
+
+      - alert: BotCheckHarnessTTSFirstByteLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(botcheck_tts_first_byte_latency_seconds_bucket{scenario_kind="ai"}[15m]))) > 0.5 and sum(rate(botcheck_tts_first_byte_latency_seconds_count{scenario_kind="ai"}[15m])) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "Harness live TTS first-byte latency p95 above target"
+          description: "p95 harness live TTS first-byte latency is above 500ms for 10m. This is a shared speech-path signal; check provider responsiveness, connection reuse, and voice model selection."
+
+      - alert: BotCheckHarnessSTTListenLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(botcheck_stt_listen_latency_seconds_bucket{result="speech",scenario_kind="ai"}[15m]))) > 0.5 and sum(rate(botcheck_stt_listen_latency_seconds_count{result="speech",scenario_kind="ai"}[15m])) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          service: agent
+        annotations:
+          summary: "Harness STT listen latency p95 above target"
+          description: "p95 harness STT listen latency for spoken bot turns is above 500ms for 10m. This is a shared speech-path signal; tune endpointing and silence windows before escalating to provider issues."
+
+  - name: botcheck-phase4-slos
+    interval: 30s
+    rules:
+      - alert: BotCheckAPIAvailabilityLow
+        expr: (sum(rate(botcheck_api_http_requests_total{status_code!~"5.."}[10m])) / clamp_min(sum(rate(botcheck_api_http_requests_total[10m])), 0.001)) < 0.99
+        for: 10m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "API availability SLO breach (<99%)"
+          description: "Non-5xx request ratio is below 99% for the last 10m."
+
+      - alert: BotCheckRunSuccessRateLow
+        expr: (sum(increase(botcheck_run_state_transitions_total{to_state="complete"}[30m])) / clamp_min(sum(increase(botcheck_run_state_transitions_total{to_state=~"complete|failed|error"}[30m])), 1)) < 0.95
+        for: 15m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Run success rate below 95%"
+          description: "Completed runs divided by terminal runs (complete|failed|error) is below 95% over 30m."
+
+      - alert: BotCheckJudgeLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(botcheck_judge_run_duration_seconds_bucket{outcome="success"}[15m]))) > 20
+        for: 10m
+        labels:
+          severity: warning
+          service: judge
+        annotations:
+          summary: "Judge p95 latency above 20s"
+          description: "p95 judge duration for successful runs has exceeded 20s for 10m."
+
+      - alert: BotCheckJudgeQueueLagHigh
+        expr: (sum(increase(botcheck_judge_enqueue_total{outcome="success"}[15m])) - sum(increase(botcheck_judge_runs_total[15m]))) > 5
+        for: 10m
+        labels:
+          severity: critical
+          service: judge
+        annotations:
+          summary: "Judge queue lag estimate above threshold"
+          description: "Proxy metric: successful enqueues exceed judged runs by >5 in 15m. Verify actual Redis queue depth before escalating; may fire transiently during cold starts/bursts."

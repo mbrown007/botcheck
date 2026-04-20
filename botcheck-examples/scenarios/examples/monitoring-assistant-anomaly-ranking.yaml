@@ -1,0 +1,57 @@
+version: '1.0'
+id: monitoring-assistant-anomaly-ranking
+name: Monitoring Assistant Anomaly Ranking
+namespace: monitoring-assistant/http-targeted-tasks
+description: Smoke test for anomaly ranking and operational prioritization over the monitoring assistant HTTP transport.
+type: robustness
+http_request_context:
+  dashboard_context:
+    uid: checkout-slo
+    name: Checkout SLO Triage
+    folder: SRE
+    tags:
+    - anomaly
+    - slo
+    time_range:
+      from: now-30m
+      to: now
+    variables:
+      service: checkout
+      environment: prod
+    explore:
+      datasource: prom-main
+      queries:
+      - sum(rate(http_requests_total{service="checkout",status=~"5.."}[5m])) by (service)
+      - sum(rate(container_cpu_usage_seconds_total{pod=~"checkout-.*"}[5m])) by (pod)
+  selected_context:
+  - type: metric
+    id: http_requests_total
+    display_name: 5xx Error Rate
+    metadata:
+      service: checkout
+      status: 5xx
+  - type: label
+    id: pod
+    display_name: pod
+    metadata:
+      service: checkout
+bot:
+  protocol: mock
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Call out anomalies in the current range and rank them by risk. Include the first thing I should verify next.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't access Grafana
+    - I don't have access to the dashboard
+    - I can't help with that
+    - I cannot help with that
+tags:
+- monitoring-assistant
+- http
+- smoke
+- anomaly-detection
+- grafana

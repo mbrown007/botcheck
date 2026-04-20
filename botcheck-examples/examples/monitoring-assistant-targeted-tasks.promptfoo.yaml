@@ -1,0 +1,345 @@
+description: Monitoring assistant targeted task eval
+metadata:
+  source_dataset: /home/marc/Documents/github/monitoring-assistant/tests/evals/dataset.yaml
+  transport_mode: direct-http
+  notes: >
+    Deterministic first-pass suite aligned to the monitoring assistant baseline
+    eval categories. This is intentionally lighter-weight than the upstream
+    manual review dataset and is designed for BotCheck Grai runs.
+prompts:
+  - label: monitoring-task
+    raw: "{{message}}"
+tests:
+  - description: Dashboard handoff summary is operational
+    vars:
+      message: Summarize what this dashboard shows in five bullets for an on-call handoff.
+    tags:
+      - monitoring-assistant
+      - dashboard-summary
+      - targeted-task
+    metadata:
+      source_case_id: DSH-001
+      source_category: dashboard_summary
+      http_request_context:
+        dashboard_context:
+          uid: "monitoring-overview"
+          name: "Monitoring Assistant Overview"
+          folder: "Operations"
+          tags:
+            - "operations"
+            - "handoff"
+          time_range:
+            from: "now-6h"
+            to: "now"
+          variables:
+            service: "checkout"
+            cluster: "prod-eu-1"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\"}[5m]))"
+        selected_context:
+          - type: "dashboard"
+            id: "monitoring-overview"
+            display_name: "Monitoring Assistant Overview"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.5
+      - type: icontains-any
+        value:
+          - dashboard
+          - panel
+          - service
+        weight: 0.5
+
+  - description: Dashboard weak-spot summary includes next steps
+    vars:
+      message: List the three weakest spots in this dashboard right now and what I should check next.
+    tags:
+      - monitoring-assistant
+      - dashboard-summary
+      - targeted-task
+    metadata:
+      source_case_id: DSH-004
+      source_category: dashboard_summary
+      http_request_context:
+        dashboard_context:
+          uid: "monitoring-overview"
+          name: "Monitoring Assistant Overview"
+          time_range:
+            from: "now-30m"
+            to: "now"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service=\"checkout\"}[5m])))"
+        selected_context:
+          - type: "metric"
+            id: "http_request_duration_seconds_bucket"
+            display_name: "Checkout P95 Latency"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - check
+          - investigate
+          - verify
+        weight: 0.6
+
+  - description: Anomaly ranking response shows prioritization
+    vars:
+      message: Call out anomalies in the current range and rank them by risk.
+    tags:
+      - monitoring-assistant
+      - anomaly-detection
+      - targeted-task
+    metadata:
+      source_case_id: ANO-001
+      source_category: anomaly_detection
+      http_request_context:
+        dashboard_context:
+          uid: "checkout-slo"
+          name: "Checkout SLO Triage"
+          time_range:
+            from: "now-30m"
+            to: "now"
+          variables:
+            service: "checkout"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[5m])) by (service)"
+        selected_context:
+          - type: "metric"
+            id: "http_requests_total"
+            display_name: "5xx Error Rate"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - risk
+          - priority
+          - highest
+          - ranked
+        weight: 0.6
+
+  - description: Query help returns PromQL-like structure
+    vars:
+      message: Write a PromQL query for 5xx error rate by service over the last 30 minutes.
+    tags:
+      - monitoring-assistant
+      - query-help
+      - targeted-task
+      - promql
+    metadata:
+      source_case_id: QRY-001
+      source_category: query_help
+      http_request_context:
+        dashboard_context:
+          uid: "api-golden-signals"
+          name: "API Golden Signals"
+          time_range:
+            from: "now-30m"
+            to: "now"
+          variables:
+            service: "api-gateway"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"api-gateway\"}[5m])) by (route)"
+        selected_context:
+          - type: "label"
+            id: "route"
+            display_name: "route"
+    threshold: 0.75
+    assert:
+      - type: contains-any
+        value:
+          - "rate("
+          - "increase("
+        weight: 0.5
+      - type: icontains-any
+        value:
+          - service
+          - job
+          - app
+        weight: 0.5
+
+  - description: Query fix explains the sum-before-rate bug
+    vars:
+      message: "Fix this query and explain the bug: sum(rate(http_requests_total{status=~\"5..\"}[5m])) by ()"
+    tags:
+      - monitoring-assistant
+      - query-help
+      - targeted-task
+      - promql
+    metadata:
+      source_case_id: QRY-002
+      source_category: query_help
+      http_request_context:
+        dashboard_context:
+          uid: "api-query-debug"
+          name: "API Query Debug"
+          time_range:
+            from: "now-1h"
+            to: "now"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by ()"
+    threshold: 0.75
+    assert:
+      - type: icontains-any
+        value:
+          - rate
+          - aggregation
+          - by
+        weight: 0.5
+      - type: word-count
+        threshold: 12
+        weight: 0.5
+
+  - description: Incident triage plan is structured and action-oriented
+    vars:
+      message: We have a checkout outage. Give me a first 10-minute triage plan.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - targeted-task
+    metadata:
+      source_case_id: INC-001
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "checkout-incident"
+          name: "Checkout Incident Command"
+          time_range:
+            from: "now-15m"
+            to: "now"
+          variables:
+            service: "checkout"
+            region: "eu-west-1"
+          explore:
+            datasource: "prom-main"
+            queries:
+              - "sum(rate(http_requests_total{service=\"checkout\",status=~\"5..\"}[1m])) by (service)"
+        selected_context:
+          - type: "datasource"
+            id: "prom-main"
+            display_name: "Prometheus"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 20
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - impact
+          - blast radius
+          - verify
+          - rollback
+          - mitigation
+        weight: 0.6
+
+  - description: Incident update mentions impact and next update
+    vars:
+      message: Draft an incident update for stakeholders from current telemetry.
+    tags:
+      - monitoring-assistant
+      - incident-response
+      - targeted-task
+    metadata:
+      source_case_id: INC-003
+      source_category: incident_response
+      http_request_context:
+        dashboard_context:
+          uid: "checkout-incident"
+          name: "Checkout Incident Command"
+          time_range:
+            from: "now-15m"
+            to: "now"
+          variables:
+            service: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 18
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - impact
+          - status
+          - next update
+        weight: 0.6
+
+  - description: Runbook guidance covers alert-noise validation
+    vars:
+      message: Give me the recommended steps to validate alert noise before changing thresholds.
+    tags:
+      - monitoring-assistant
+      - docs-runbook
+      - targeted-task
+    metadata:
+      source_case_id: DOC-003
+      source_category: docs_runbook
+      http_request_context:
+        dashboard_context:
+          uid: "alert-noise-review"
+          name: "Alert Noise Review"
+          time_range:
+            from: "now-24h"
+            to: "now"
+          variables:
+            team: "platform"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - threshold
+          - false positive
+          - validate
+          - rollback
+        weight: 0.6
+
+  - description: Runbook outline includes diagnostics and recovery
+    vars:
+      message: Show a runbook outline for persistent high error rate incidents.
+    tags:
+      - monitoring-assistant
+      - docs-runbook
+      - targeted-task
+    metadata:
+      source_case_id: DOC-006
+      source_category: docs_runbook
+      http_request_context:
+        dashboard_context:
+          uid: "error-rate-runbook"
+          name: "High Error Rate Runbook"
+          time_range:
+            from: "now-2h"
+            to: "now"
+          variables:
+            service: "checkout"
+    threshold: 0.75
+    assert:
+      - type: word-count
+        threshold: 16
+        weight: 0.4
+      - type: icontains-any
+        value:
+          - diagnostics
+          - mitigation
+          - recovery
+          - validation
+        weight: 0.6

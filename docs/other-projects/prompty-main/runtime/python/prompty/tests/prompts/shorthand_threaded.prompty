@@ -1,0 +1,15 @@
+---
+model: gpt-4o
+inputs:
+  - name: question
+    kind: string
+  - name: conversation
+    kind: thread
+---
+system:
+You are a helpful assistant.
+
+{{conversation}}
+
+user:
+{{question}}

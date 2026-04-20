@@ -1,0 +1,69 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.uv/
+dist/
+build/
+*.egg
+
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+web/.env
+web/.env.local
+
+# Docker
+.docker/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Secrets / credentials — never commit these
+*.pem
+*.key
+*.crt
+credentials.json
+service-account*.json
+
+# PoC run artifacts
+poc/runs/*.json
+
+# Example / reference projects (local only)
+example_projects/
+
+# Terraform state — keep remote
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+infra/terraform/*.tfvars
+
+# Local test/runtime artifacts
+.localstack/
+services/api/botcheck_dev.db
+web/tsconfig.tsbuildinfo
+web/playwright-report/
+web/test-results/
+
+# Metrics scrape token (real token mounted in production; dev copy kept locally)
+infra/monitoring/metrics-scrape-token
+infra/observability/metrics-scrape-token

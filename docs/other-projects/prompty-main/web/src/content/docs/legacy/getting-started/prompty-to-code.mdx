@@ -1,0 +1,326 @@
+---
+title: From Prompty to Code
+description: Learn how to convert your Prompty assets to Python code and build production applications
+sidebar:
+  order: 4
+---
+
+_In this section, we'll learn how to convert Prompty assets to Python code and build your first production-ready application._
+
+## Prerequisites
+
+Before we begin, ensure you have:
+
+- [Python 3.10 or higher](https://www.python.org/downloads/) installed
+- Visual Studio Code with the Prompty extension
+- A completed Prompty asset from the previous section
+- Access to Azure OpenAI or another supported model provider
+
+## Installation
+
+First, install the Prompty Python package with the appropriate extras:
+
+```bash
+# For Azure OpenAI
+pip install "prompty[azure]"
+
+# For OpenAI
+pip install "prompty[openai]"
+
+# For GitHub Models and serverless
+pip install "prompty[serverless]"
+
+# Install all providers
+pip install "prompty[azure,openai,serverless]"
+```
+
+## Generate Code from Prompty Asset
+
+The VS Code extension can automatically generate Python code from your Prompty assets:
+
+1. **Open your Prompty file** in VS Code
+2. **Right-click** on the file in the Explorer
+3. **Select** "Add Code" → "Add Prompty Code"
+4. **Choose** your preferred template (basic, with tracing, async, etc.)
+
+This generates a Python file with the necessary imports and execution logic.
+
+### Generated Code Example
+
+Here's what the generated code looks like:
+
+```python
+import prompty
+import prompty.azure
+from prompty.tracer import trace, Tracer, console_tracer, PromptyTracer
+
+# Configure tracing (optional)
+Tracer.add("console", console_tracer)
+json_tracer = PromptyTracer(output_dir="./traces")
+Tracer.add("json", json_tracer.tracer)
+
+@trace
+def run(question: str) -> str:
+    """Execute the Shakespeare prompt with the given question"""
+    
+    # Execute the prompty file
+    response = prompty.execute(
+        "shakespeare.prompty",
+        inputs={"question": question}
+    )
+    
+    return response
+
+if __name__ == "__main__":
+    # Example usage
+    result = run("What is the meaning of life?")
+    print(result)
+```
+
+## Environment Configuration
+
+### Set up Environment Variables
+
+Create a `.env` file in your project directory:
+
+```bash
+# .env
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-api-key
+AZURE_OPENAI_DEPLOYMENT=gpt-35-turbo
+AZURE_OPENAI_API_VERSION=2024-10-21
+```
+
+### Load Environment Variables
+
+Update your Python code to load environment variables:
+
+```python
+import os
+from dotenv import load_dotenv
+import prompty
+import prompty.azure
+
+# Load environment variables
+load_dotenv()
+
+def run(question: str) -> str:
+    """Execute the Shakespeare prompt with environment configuration"""
+    
+    response = prompty.execute(
+        "shakespeare.prompty",
+        inputs={"question": question}
+    )
+    
+    return response
+
+if __name__ == "__main__":
+    # Verify environment variables are loaded
+    if not os.getenv("AZURE_OPENAI_ENDPOINT"):
+        print("Error: AZURE_OPENAI_ENDPOINT not found in environment")
+        exit(1)
+    
+    result = run("To be or not to be?")
+    print(result)
+```
+
+## Building a Simple Application
+
+Let's create a more comprehensive application:
+
+### app.py
+
+```python
+import os
+import sys
+from dotenv import load_dotenv
+import prompty
+import prompty.azure
+from prompty.tracer import trace, Tracer, console_tracer
+
+# Load environment variables
+load_dotenv()
+
+# Configure tracing for development
+Tracer.add("console", console_tracer)
+
+The Prompty runtime supports additional runtimes, including frameworks such as [LangChain](/tutorials/using-langchain/), and [Semantic Kernel](/tutorials/using-semantic-kernel/). In the tutorials section, we will cover how to generate code from Prompty assets using these runtimes. (coming soon)
+
+def main():
+    """Main application loop"""
+    print("🎭 Welcome to the Shakespeare Chat App!")
+    print("Type 'quit' to exit, 'help' for commands")
+    
+    while True:
+        user_input = input("\n🤔 Ask Shakespeare: ").strip()
+        
+        if user_input.lower() in ['quit', 'exit', 'q']:
+            print("👋 Farewell!")
+            break
+        elif user_input.lower() == 'help':
+            print("Commands:")
+            print("  help - Show this help")
+            print("  quit - Exit the application")
+            print("  Just type any question to chat with Shakespeare!")
+            continue
+        elif not user_input:
+            continue
+        
+        print("🎭 Shakespeare is thinking...")
+        response = chat_with_shakespeare(user_input)
+        
+        if response:
+            print(f"🎭 Shakespeare: {response}")
+        else:
+            print("😔 Shakespeare seems to be having trouble responding.")
+
+if __name__ == "__main__":
+    # Verify required environment variables
+    required_vars = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_API_KEY", 
+        "AZURE_OPENAI_DEPLOYMENT"
+    ]
+    
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+        print("Please check your .env file and try again.")
+        sys.exit(1)
+    
+    main()
+```
+
+## Running Your Application
+
+### Command Line Execution
+
+Run your application from the command line:
+
+```bash
+# Basic execution
+python app.py
+
+# With verbose tracing
+PROMPTY_TRACE_LEVEL=DEBUG python app.py
+```
+
+### In VS Code
+
+1. **Open the integrated terminal** (Ctrl+`)
+2. **Navigate to your project directory**
+3. **Run the application**: `python app.py`
+
+## Error Handling and Debugging
+
+### Add Robust Error Handling
+
+```python
+import logging
+from typing import Optional
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+def safe_execute_prompt(prompt_path: str, inputs: dict) -> Optional[str]:
+    """Safely execute a prompt with comprehensive error handling"""
+    try:
+        logger.info(f"Executing prompt: {prompt_path}")
+        
+        response = prompty.execute(prompt_path, inputs=inputs)
+        
+        logger.info("Prompt executed successfully")
+        return response
+        
+    except FileNotFoundError:
+        logger.error(f"Prompt file not found: {prompt_path}")
+        return None
+    except ConnectionError:
+        logger.error("Failed to connect to AI service")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return None
+
+# Usage
+response = safe_execute_prompt("shakespeare.prompty", {"question": "Hello"})
+if response:
+    print(response)
+else:
+    print("Failed to get response")
+```
+
+## Next Steps
+
+Now that you have a working application, explore these advanced topics:
+
+### 1. Add Multiple Prompts
+
+Create different prompty files for different use cases and route requests appropriately.
+
+### 2. Add Web Interface
+
+Create a simple web API with FastAPI to serve your prompts over HTTP.
+
+### 3. Explore Advanced Features
+
+- **[Observability & Tracing](/guides/observability/)** - Monitor your application
+- **[Performance Optimization](/guides/performance/)** - Scale your application  
+- **[Configuration](/guides/configuration/)** - Manage different environments
+- **[CLI Usage](/guides/cli/)** - Use the command-line interface
+
+## Common Issues and Solutions
+
+### Issue: ImportError
+
+```bash
+# Error: No module named 'prompty'
+pip install "prompty[azure]"
+
+# Error: No module named 'dotenv' 
+pip install python-dotenv
+```
+
+### Issue: Authentication Errors
+
+```python
+# Verify your credentials
+import os
+print(f"Endpoint: {os.getenv('AZURE_OPENAI_ENDPOINT')}")
+print(f"API Key: {'***' if os.getenv('AZURE_OPENAI_API_KEY') else 'Not set'}")
+print(f"Deployment: {os.getenv('AZURE_OPENAI_DEPLOYMENT')}")
+```
+
+### Issue: File Not Found
+
+```python
+import os
+prompt_path = "shakespeare.prompty"
+if os.path.exists(prompt_path):
+    print(f"✅ Found prompt file: {prompt_path}")
+else:
+    print(f"❌ Prompt file not found: {prompt_path}")
+    print(f"Current directory: {os.getcwd()}")
+    print("Files in directory:", os.listdir("."))
+```
+
+Congratulations! You've successfully converted your Prompty asset to code and built your first application. 🎉
+
+
+
+
+
+
+
+## 7. Additional supported runtimes
+
+The Prompty runtime supports additional runtimes, including frameworks such as [LangChain](/tutorials/using-langchain/), and [Semantic Kernel](/tutorials/using-semantic-kernel/). In the tutorials section, we will cover how to generate code from Prompty assets using these runtimes. (coming soon)
+
+
+---
+[Want to Contribute To the Project?](/contributing/) - _Updated Guidance Coming Soon_.

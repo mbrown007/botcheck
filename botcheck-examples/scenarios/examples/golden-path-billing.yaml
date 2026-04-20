@@ -1,0 +1,53 @@
+version: '1.0'
+id: golden-path-billing
+name: "Golden Path \u2014 Billing Query"
+type: golden_path
+description: 'Standard happy-path call. Caller asks about their account balance, bot recognises the intent and routes to the billing queue.
+
+  '
+bot:
+  endpoint: sip:${BOT_SIP_USER}@${SIP_PROVIDER}
+  protocol: sip
+  caller_id: '+15550001234'
+config:
+  turn_timeout_s: 15
+  max_duration_s: 120
+  tts_voice: openai:nova
+  language: en-US
+turns:
+- id: t0_greeting
+  kind: bot_listen
+  config:
+    timeout_s: 20.0
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Hi, I'd like to check my account balance please.
+  listen: true
+  expect:
+    intent_recognized: true
+- id: t2
+  kind: harness_prompt
+  content:
+    text: Yes, my account number is 123456.
+  listen: true
+- id: t3
+  kind: harness_prompt
+  content:
+    text: Great, thank you.
+  listen: false
+scoring:
+  rubric:
+  - dimension: routing
+    weight: 0.6
+    threshold: 0.9
+    gate: true
+  - dimension: reliability
+    weight: 0.4
+    threshold: 0.9
+    gate: true
+  overall_gate: true
+tags:
+- golden-path
+- billing
+- smoke-test

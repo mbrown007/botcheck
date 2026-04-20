@@ -1,0 +1,19 @@
+{
+  "name": "Direct HTTP Session History Bot",
+  "protocol": "http",
+  "endpoint": "https://bot.internal/v2/conversations/respond",
+  "headers": {
+    "Authorization": "Bearer replace-me"
+  },
+  "direct_http_config": {
+    "method": "POST",
+    "request_content_type": "json",
+    "request_text_field": "utterance",
+    "request_history_field": "conversation.history",
+    "request_session_id_field": "conversation.id",
+    "response_text_field": "output.text",
+    "timeout_s": 45,
+    "max_retries": 2
+  },
+  "is_active": true
+}

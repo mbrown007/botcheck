@@ -1,0 +1,28 @@
+{
+  "name": "Monitoring Assistant HTTP Targeted Pack",
+  "description": "Targeted BotCheck smoke pack for monitoring assistant dashboard, anomaly, query, incident, and runbook tasks over direct HTTP.",
+  "tags": [
+    "monitoring-assistant",
+    "http",
+    "smoke",
+    "grafana"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "scenario_id": "monitoring-assistant-dashboard-handoff"
+    },
+    {
+      "scenario_id": "monitoring-assistant-anomaly-ranking"
+    },
+    {
+      "scenario_id": "monitoring-assistant-query-help"
+    },
+    {
+      "scenario_id": "monitoring-assistant-incident-triage"
+    },
+    {
+      "scenario_id": "monitoring-assistant-runbook-guidance"
+    }
+  ]
+}

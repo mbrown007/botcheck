@@ -1,0 +1,156 @@
+{
+  "description": "Runtime configuration for the test harness.",
+  "properties": {
+    "bot_join_timeout_s": {
+      "default": 60.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Bot Join Timeout S",
+      "type": "number"
+    },
+    "initial_drain_s": {
+      "default": 2.0,
+      "minimum": 0.0,
+      "title": "Initial Drain S",
+      "type": "number"
+    },
+    "inter_turn_pause_s": {
+      "default": 0.0,
+      "minimum": 0.0,
+      "title": "Inter Turn Pause S",
+      "type": "number"
+    },
+    "language": {
+      "default": "en-US",
+      "title": "Language",
+      "type": "string"
+    },
+    "max_duration_s": {
+      "default": 300.0,
+      "title": "Max Duration S",
+      "type": "number"
+    },
+    "max_total_turns": {
+      "default": 50,
+      "minimum": 1,
+      "title": "Max Total Turns",
+      "type": "integer"
+    },
+    "noise_profile": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Noise Profile"
+    },
+    "pause_threshold_ms": {
+      "default": 2000,
+      "title": "Pause Threshold Ms",
+      "type": "integer"
+    },
+    "record_audio": {
+      "default": true,
+      "title": "Record Audio",
+      "type": "boolean"
+    },
+    "record_transcript": {
+      "default": true,
+      "title": "Record Transcript",
+      "type": "boolean"
+    },
+    "stt_endpointing_ms": {
+      "default": 2000,
+      "minimum": 0,
+      "title": "Stt Endpointing Ms",
+      "type": "integer"
+    },
+    "stt_model": {
+      "default": "nova-2-general",
+      "title": "Stt Model",
+      "type": "string"
+    },
+    "stt_provider": {
+      "default": "deepgram",
+      "title": "Stt Provider",
+      "type": "string"
+    },
+    "timing_gate_interruption_recovery_pct": {
+      "default": 90.0,
+      "title": "Timing Gate Interruption Recovery Pct",
+      "type": "number"
+    },
+    "timing_gate_interruptions_count": {
+      "default": 2,
+      "title": "Timing Gate Interruptions Count",
+      "type": "integer"
+    },
+    "timing_gate_long_pause_count": {
+      "default": 3,
+      "title": "Timing Gate Long Pause Count",
+      "type": "integer"
+    },
+    "timing_gate_p95_response_gap_ms": {
+      "default": 1200,
+      "title": "Timing Gate P95 Response Gap Ms",
+      "type": "integer"
+    },
+    "timing_gate_turn_taking_efficiency_pct": {
+      "default": 95.0,
+      "title": "Timing Gate Turn Taking Efficiency Pct",
+      "type": "number"
+    },
+    "timing_warn_interruption_recovery_pct": {
+      "default": 85.0,
+      "title": "Timing Warn Interruption Recovery Pct",
+      "type": "number"
+    },
+    "timing_warn_interruptions_count": {
+      "default": 0,
+      "title": "Timing Warn Interruptions Count",
+      "type": "integer"
+    },
+    "timing_warn_long_pause_count": {
+      "default": 1,
+      "title": "Timing Warn Long Pause Count",
+      "type": "integer"
+    },
+    "timing_warn_p95_response_gap_ms": {
+      "default": 800,
+      "title": "Timing Warn P95 Response Gap Ms",
+      "type": "integer"
+    },
+    "timing_warn_turn_taking_efficiency_pct": {
+      "default": 90.0,
+      "title": "Timing Warn Turn Taking Efficiency Pct",
+      "type": "number"
+    },
+    "transcript_merge_window_s": {
+      "default": 1.5,
+      "exclusiveMinimum": 0.0,
+      "title": "Transcript Merge Window S",
+      "type": "number"
+    },
+    "transfer_timeout_s": {
+      "default": 35.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Transfer Timeout S",
+      "type": "number"
+    },
+    "tts_voice": {
+      "default": "openai:nova",
+      "title": "Tts Voice",
+      "type": "string"
+    },
+    "turn_timeout_s": {
+      "default": 15.0,
+      "title": "Turn Timeout S",
+      "type": "number"
+    }
+  },
+  "title": "ScenarioConfig",
+  "type": "object"
+}

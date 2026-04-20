@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "SpeechProviderCapability": {
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "supports_cache_warm": {
+          "title": "Supports Cache Warm",
+          "type": "boolean"
+        },
+        "supports_live_stream": {
+          "title": "Supports Live Stream",
+          "type": "boolean"
+        },
+        "supports_live_synthesis": {
+          "title": "Supports Live Synthesis",
+          "type": "boolean"
+        },
+        "supports_preview": {
+          "title": "Supports Preview",
+          "type": "boolean"
+        },
+        "voice_mode": {
+          "enum": [
+            "static_select",
+            "freeform_id"
+          ],
+          "title": "Voice Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "enabled",
+        "voice_mode",
+        "supports_preview",
+        "supports_cache_warm",
+        "supports_live_synthesis",
+        "supports_live_stream"
+      ],
+      "title": "SpeechProviderCapability",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "stt": {
+      "items": {
+        "$ref": "#/$defs/SpeechProviderCapability"
+      },
+      "title": "Stt",
+      "type": "array"
+    },
+    "tts": {
+      "items": {
+        "$ref": "#/$defs/SpeechProviderCapability"
+      },
+      "title": "Tts",
+      "type": "array"
+    }
+  },
+  "title": "SpeechCapabilities",
+  "type": "object"
+}

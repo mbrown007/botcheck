@@ -1,0 +1,21 @@
+{
+  "name": "HTTP Direct Smoke Pack",
+  "description": "Fast smoke pack for direct HTTP bot testing before SIP exposure.",
+  "tags": [
+    "smoke",
+    "http",
+    "pre-prod"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "scenario_id": "e2e-mock-bot-smoke"
+    },
+    {
+      "scenario_id": "golden-path-billing"
+    },
+    {
+      "scenario_id": "branching-smoke-sip"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Social Engineering Pack",
+  "description": "Regression pack targeting social engineering attack surfaces: urgency and authority pressure, cross-session context contamination, memory poisoning, and noisy-channel auth bypass. Tests the bot's resistance to emotional manipulation, fake prior-context injection, and verification bypass via fabricated authority. Run this pack before every release and on a weekly schedule for continuous social engineering regression.",
+  "tags": [
+    "adversarial",
+    "social-engineering",
+    "red-team",
+    "security",
+    "regression"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "scenario_id": "social-engineering-urgency-pressure"
+    },
+    {
+      "scenario_id": "social-engineering-cross-session-contamination"
+    },
+    {
+      "scenario_id": "adversarial-branching-memory-exfil"
+    },
+    {
+      "scenario_id": "adversarial-branching-asr-auth-bypass"
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+---
+title: Migration Guide (v1 → v2)
+description: >
+  How to upgrade from Prompty v1 to v2 — what changed and what
+  to update.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+Prompty v2 is a significant rewrite. Your `.prompty` files will
+mostly work as-is (v2 auto-migrates v1 syntax), but your Python
+code will need updates.
+
+## Breaking Changes
+
+### Python ≥ 3.11 Required
+
+v1 supported Python 3.9+. v2 requires 3.11+ for modern syntax
+features (`X | Y` unions, `match`/`case`, etc.).
+
+### Package Manager
+
+v2 recommends `uv` for Python environment management:
+
+```bash
+# v1
+pip install prompty
+
+# v2
+uv pip install prompty[jinja2,openai]
+```
+
+### Extras Are Required
+
+In v1, all providers were bundled. In v2, install the extras
+you need:
+
+| Extra | What it includes |
+|-------|-----------------|
+| `jinja2` | Jinja2 renderer |
+| `mustache` | Mustache renderer |
+| `openai` | OpenAI provider |
+| `azure` | Azure OpenAI + identity (deprecated alias for `foundry`) |
+| `otel` | OpenTelemetry tracing |
+| `all` | Everything above |
+
+### Agent Mode API
+
+v1 used a special `apiType` in the `.prompty` file and smuggled tool functions via `metadata["tool_functions"]`:
+
+```python
+# v1 — tool functions smuggled via metadata
+agent.metadata["tool_functions"] = {
+    "get_weather": get_weather
+}
+result = prompty.execute(agent, messages)
+```
+
+v2 uses explicit `execute_agent()`:
+
+```python
+# v2 — tools passed explicitly
+result = prompty.execute_agent(
+    "agent.prompty",
+    inputs={...},
+    tools={"get_weather": get_weather},
+)
+```
+
+### Azure Credentials
+
+v1 silently fell back to `DefaultAzureCredential` when no
+API key was provided. v2 requires explicit configuration via
+the connection registry:
+
+```python
+# v2 — explicit credential setup
+from openai import AzureOpenAI
+from azure.identity import (
+    DefaultAzureCredential,
+    get_bearer_token_provider,
+)
+
+client = AzureOpenAI(
+    azure_endpoint=os.environ["AZURE_ENDPOINT"],
+    azure_ad_token_provider=get_bearer_token_provider(
+        DefaultAzureCredential(),
+        "https://cognitiveservices.azure.com/.default",
+    ),
+)
+prompty.register_connection("azure", client=client)
+```
+
+Then reference it in the `.prompty` file:
+
+```yaml
+model:
+  connection:
+    kind: reference
+    name: azure
+```
+
+## File Format Changes
+
+v2 uses updated property names. v1 names are auto-migrated
+with deprecation warnings.
+
+### Model Configuration
+
+```yaml
+# v1
+model:
+  api: chat
+  configuration:
+    type: azure_openai
+    azure_endpoint: ${env:ENDPOINT}
+    api_key: ${env:KEY}
+  parameters:
+    max_tokens: 500
+    temperature: 0.7
+
+# v2
+model:
+  apiType: chat
+  provider: foundry
+  connection:
+    kind: key
+    endpoint: ${env:ENDPOINT}
+    apiKey: ${env:KEY}
+  options:
+    maxOutputTokens: 500
+    temperature: 0.7
+```
+
+### Input Schema
+
+```yaml
+# v1
+inputs:
+  name:
+    type: string
+    sample: World
+  question:
+    type: string
+
+# v2
+inputs:
+  - name: name
+    kind: string
+    default: World
+  - name: question
+    kind: string
+```
+
+### Template Format
+
+```yaml
+# v1
+template: jinja2
+
+# v2 (shorthand)
+template:
+  format: jinja2
+  parser: prompty
+
+# v2 (full form)
+template:
+  format:
+    kind: jinja2
+  parser:
+    kind: prompty
+```
+
+## Key Renames
+
+| v1 Property | v2 Property |
+|-------------|-------------|
+| `model.api` | `model.apiType` |
+| `model.configuration` | `model.connection` |
+| `model.configuration.type` | `model.provider` (`azure_openai` → `foundry`, `openai` → `openai`) |
+| `model.parameters` | `model.options` |
+| `model.parameters.max_tokens` | `model.options.maxOutputTokens` |
+| `model.parameters.top_p` | `model.options.topP` |
+| `model.parameters.frequency_penalty` | `model.options.frequencyPenalty` |
+| `model.parameters.presence_penalty` | `model.options.presencePenalty` |
+| `model.parameters.stop` | `model.options.stopSequences` |
+| `inputs` (dict) | `inputs` (list of Property) |
+| `outputs` | `outputs` |
+| `inputs.X.type` | `kind` |
+| `inputs.X.sample` | `default` |
+
+## New Features in v2
+
+- **Connection registry** — `register_connection()`
+- **Agent loop** — `execute_agent()` with error recovery
+- **Streaming hardening** — tool calls, refusals, empty chunks
+- **Structured output** — `outputSchema` → `response_format`
+- **Thread safety** — renderer nonces use `threading.local()`
+- **Entry-point discovery** — third-party implementations
+- **TypeScript runtime** — `@prompty/core`, `@prompty/openai`, `@prompty/foundry`, `@prompty/anthropic`

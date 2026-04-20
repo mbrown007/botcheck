@@ -1,0 +1,54 @@
+version: '1.0'
+id: monitoring-assistant-query-help
+name: Monitoring Assistant Query Help
+namespace: monitoring-assistant/http-targeted-tasks
+description: Smoke test for PromQL and LogQL query authoring over the monitoring assistant HTTP transport.
+type: golden_path
+http_request_context:
+  dashboard_context:
+    uid: api-golden-signals
+    name: API Golden Signals
+    folder: Observability
+    tags:
+    - promql
+    - query-help
+    time_range:
+      from: now-30m
+      to: now
+    variables:
+      service: api-gateway
+      route_group: /checkout
+    explore:
+      datasource: prom-main
+      queries:
+      - sum(rate(http_requests_total{service="api-gateway"}[5m])) by (route)
+  selected_context:
+  - type: metric
+    id: http_requests_total
+    display_name: HTTP Requests Total
+    metadata:
+      service: api-gateway
+  - type: label
+    id: route
+    display_name: route
+    metadata:
+      service: api-gateway
+bot:
+  protocol: mock
+turns:
+- id: t1
+  kind: harness_prompt
+  content:
+    text: Write a PromQL query for 5xx error rate by service over the last 30 minutes, then explain what it is measuring.
+  listen: true
+  expect:
+    no_forbidden_phrase:
+    - I can't write queries
+    - I can't help with that
+    - I do not know PromQL
+tags:
+- monitoring-assistant
+- http
+- smoke
+- query-help
+- promql

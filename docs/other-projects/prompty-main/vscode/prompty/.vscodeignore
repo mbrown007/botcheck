@@ -1,0 +1,17 @@
+.vscode/**
+**/*.ts
+**/*.map
+.gitignore
+**/tsconfig.json
+**/tsconfig.base.json
+contributing.md
+.travis.yml
+**/node_modules/**
+packages/**/src/
+packages/trace/node_modules/**
+packages/trace/src/**
+packages/trace/public/**
+packages/trace/*.ts
+packages/trace/*.json
+packages/core/out/*.js
+!packages/core/out/extension.bundle.js

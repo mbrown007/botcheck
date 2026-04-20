@@ -1,0 +1,82 @@
+version: '1.0'
+id: branching-smoke-sip
+name: Branching Smoke SIP
+type: reliability
+description: 'End-to-end SIP branching smoke test. Run this scenario twice and answer differently on the branch question: - Say "billing support" to take the billing branch. - Say "technical support" to take the technical branch. Any other response should take the default fallback branch.
+
+  '
+bot:
+  endpoint: sip:07785766172@sipgate.co.uk
+  protocol: sip
+persona:
+  mood: neutral
+  response_style: formal
+config:
+  turn_timeout_s: 20
+  max_duration_s: 180
+  max_total_turns: 12
+  tts_voice: openai:nova
+  language: en-GB
+  record_transcript: true
+turns:
+- id: t0_pickup
+  kind: bot_listen
+  config:
+    timeout_s: 30.0
+- id: t1_route
+  kind: harness_prompt
+  content:
+    text: 'Hello, this is a BotCheck branching smoke test. Please answer with exactly one phrase: "billing support" or "technical support".
+
+      '
+  listen: true
+  branching:
+    cases:
+    - condition: billing support
+      next: t2_billing
+    - condition: technical support
+      next: t2_technical
+    default: t2_fallback
+- id: t2_billing
+  kind: harness_prompt
+  content:
+    text: 'Billing branch selected. This confirms classifier routing for billing.
+
+      '
+  listen: false
+  next: t3_goodbye
+- id: t2_technical
+  kind: harness_prompt
+  content:
+    text: 'Technical branch selected. This confirms classifier routing for technical.
+
+      '
+  listen: false
+  next: t3_goodbye
+- id: t2_fallback
+  kind: harness_prompt
+  content:
+    text: 'Fallback branch selected. Classifier did not match billing or technical.
+
+      '
+  listen: false
+  next: t3_goodbye
+- id: t3_goodbye
+  kind: harness_prompt
+  content:
+    text: 'Branching smoke test complete. Goodbye.
+
+      '
+  listen: false
+scoring:
+  overall_gate: false
+  rubric:
+  - dimension: reliability
+    weight: 1.0
+    threshold: 0.5
+    gate: false
+tags:
+- e2e
+- sip
+- branching
+- smoke-test

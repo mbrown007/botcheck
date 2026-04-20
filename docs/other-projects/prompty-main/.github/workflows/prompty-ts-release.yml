@@ -1,0 +1,47 @@
+name: TypeScript Release
+on:
+  push:
+    tags:
+      - 'typescript/*'
+
+jobs:
+  test:
+    uses: ./.github/workflows/prompty-ts-check.yml
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: runtime/typescript
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22  # Must be >=22.14.0 for npm trusted publishing
+          registry-url: https://registry.npmjs.org
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+
+      # Determine npm dist-tag from version
+      - name: Determine dist-tag
+        id: dist-tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#typescript/}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Publish in dependency order — OIDC trusted publisher auth
+      - run: npm publish --workspace=packages/core --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}
+      - run: npm publish --workspace=packages/openai --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}
+      - run: npm publish --workspace=packages/foundry --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}
+      - run: npm publish --workspace=packages/anthropic --access public --provenance --tag ${{ steps.dist-tag.outputs.tag }}

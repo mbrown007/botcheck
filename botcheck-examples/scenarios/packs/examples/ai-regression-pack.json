@@ -1,0 +1,24 @@
+{
+  "name": "AI Regression and Red-Team Pack",
+  "description": "Mixed pack for daily regression, routing confidence, and policy hardening.",
+  "tags": [
+    "regression",
+    "ai",
+    "security"
+  ],
+  "execution_mode": "parallel",
+  "items": [
+    {
+      "ai_scenario_id": "ai_route_billing_escalation"
+    },
+    {
+      "ai_scenario_id": "ai_pii_verification_refusal"
+    },
+    {
+      "ai_scenario_id": "ai_off_task_jailbreak_probe"
+    },
+    {
+      "scenario_id": "inverse-jailbreak-harness-hardening"
+    }
+  ]
+}
