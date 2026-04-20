@@ -14,9 +14,7 @@ run make dev or make build, make up
 
 
 
-
 <img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/920e636f-cf8c-4cf3-8916-c1d753b40810" />
-
 
 
 
