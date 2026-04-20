@@ -7,7 +7,17 @@
 
 **Enterprise-grade testing platform for LLM-powered voicebots.**
 
-BotCheck allows you to rigorously test **routing accuracy**, **policy adherence**, and **jailbreak resistance** of AI voice agents using real telephony (PSTN/SIP via LiveKit) and automated LLM judging.
+BotCheck is a weekend project to imagine how the next pulse solution would work with scheduled outbound SIP calls to AI Bot LLM as judge scoring rubric etc
+Ended up settling on Yaml format for the outboune scneario calls also added scenario builder using react flow
+Putting here in case it suseful to someone else
+I had issue with webrtc to sip bridge when runnig as container, i had to remove the binary and run locally to get sipgate trunk to connect
+run make dev or make build, make up
+
+<img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/92197506-c562-4f44-929f-bc0b873c1843" />
+
+<img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/920e636f-cf8c-4cf3-8916-c1d753b40810" />
+
+<img width="1900" height="874" alt="image" src="https://github.com/user-attachments/assets/39856b26-6411-4dad-a34d-5796fb2e820a" />
 
 ---
 
